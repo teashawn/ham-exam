@@ -1,0 +1,27 @@
+{
+  "name": "ham-exam",
+  "version": "1.0.0",
+  "description": "Bulgarian HAM Radio License Exam Practice Application",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "extract": "npm run extract --workspace=packages/extractor",
+    "test:extractor": "npm test --workspace=packages/extractor",
+    "test:exam-core": "npm test --workspace=packages/exam-core",
+    "test:web": "npm test --workspace=packages/web",
+    "test": "npm run test:extractor && npm run test:exam-core && npm run test:web",
+    "dev": "npm run dev --workspace=packages/web",
+    "build": "npm run build --workspace=packages/web",
+    "preview": "npm run preview --workspace=packages/web"
+  },
+  "keywords": [
+    "ham-radio",
+    "exam",
+    "bulgaria",
+    "amateur-radio"
+  ],
+  "license": "MIT"
+}
