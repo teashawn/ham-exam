@@ -8,6 +8,7 @@ import {
   createExamSession,
   generateId,
   getExamProgress,
+  getQuestionsBySection,
   getUnansweredQuestions,
   isPassed,
   recordAnswer,
@@ -412,5 +413,41 @@ describe('getUnansweredQuestions', () => {
     expect(unanswered.length).toBe(3);
     expect(unanswered.map((q) => q.id)).not.toContain(session.questions[0].id);
     expect(unanswered.map((q) => q.id)).not.toContain(session.questions[2].id);
+  });
+});
+
+describe('getQuestionsBySection', () => {
+  it('should group session questions by section', () => {
+    const examData = createTestExamData();
+    const config: ExamConfig = {
+      questionsPerSection: { 1: 3, 2: 2, 3: 1 },
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    };
+
+    const session = createExamSession(examData, config, 'user-123');
+    const questionsBySection = getQuestionsBySection(session, examData);
+
+    expect(questionsBySection.size).toBe(3);
+    expect(questionsBySection.get(1)?.length).toBe(3);
+    expect(questionsBySection.get(2)?.length).toBe(2);
+    expect(questionsBySection.get(3)?.length).toBe(1);
+  });
+
+  it('should not include sections with no questions', () => {
+    const examData = createTestExamData();
+    const config: ExamConfig = {
+      questionsPerSection: { 1: 5, 2: 0, 3: 0 },
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    };
+
+    const session = createExamSession(examData, config, 'user-123');
+    const questionsBySection = getQuestionsBySection(session, examData);
+
+    expect(questionsBySection.size).toBe(1);
+    expect(questionsBySection.has(1)).toBe(true);
+    expect(questionsBySection.has(2)).toBe(false);
+    expect(questionsBySection.has(3)).toBe(false);
   });
 });

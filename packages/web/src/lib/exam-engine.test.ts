@@ -81,6 +81,18 @@ describe('selectRandomQuestions', () => {
     const selected = selectRandomQuestions(questions, 5);
     expect(selected.length).toBe(5);
   });
+
+  it('should return all questions when count >= length', () => {
+    const questions = Array.from({ length: 5 }, (_, i) =>
+      createTestQuestion(`${i}`, 1)
+    );
+    const selected = selectRandomQuestions(questions, 10);
+    expect(selected.length).toBe(5);
+    // All elements should be present
+    expect(new Set(selected.map((q) => q.id))).toEqual(
+      new Set(questions.map((q) => q.id))
+    );
+  });
 });
 
 describe('buildExamQuestions', () => {
@@ -94,6 +106,25 @@ describe('buildExamQuestions', () => {
 
     const questions = buildExamQuestions(examData, config);
     expect(questions.length).toBe(10);
+  });
+
+  it('should shuffle questions when configured', () => {
+    const examData = createTestExamData();
+    const config: ExamConfig = {
+      questionsPerSection: { 1: 5, 2: 5, 3: 5 },
+      shuffleQuestions: true,
+      shuffleOptions: false,
+    };
+
+    // Run multiple times to verify shuffling
+    const results = new Set<string>();
+    for (let i = 0; i < 10; i++) {
+      const questions = buildExamQuestions(examData, config);
+      results.add(questions.map((q) => q.id).join(','));
+    }
+
+    // With shuffling, we expect different orderings
+    expect(results.size).toBeGreaterThan(1);
   });
 });
 
@@ -142,6 +173,20 @@ describe('recordAnswer', () => {
     expect(answer.isCorrect).toBe(true);
     expect(session.answers.has(questionId)).toBe(true);
   });
+
+  it('should throw for invalid question ID', () => {
+    const examData = createTestExamData();
+    const config: ExamConfig = {
+      questionsPerSection: { 1: 3 },
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    };
+    const session = createExamSession(examData, config);
+
+    expect(() => recordAnswer(session, 'invalid-id', 'А')).toThrow(
+      'Question invalid-id not found in session'
+    );
+  });
 });
 
 describe('calculateScore', () => {
@@ -187,6 +232,27 @@ describe('completeExam', () => {
     expect(result.wrongAnswers).toBe(1);
     expect(result.score).toBe(75);
     expect(result.passed).toBe(true);
+  });
+
+  it('should count unanswered questions', () => {
+    const examData = createTestExamData();
+    const config: ExamConfig = {
+      questionsPerSection: { 1: 4 },
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    };
+
+    const session = createExamSession(examData, config);
+
+    // Answer only 2 questions
+    recordAnswer(session, session.questions[0].id, 'Б');
+    recordAnswer(session, session.questions[1].id, 'Б');
+
+    const result = completeExam(session, examData);
+
+    expect(result.unanswered).toBe(2);
+    expect(result.score).toBe(50);
+    expect(result.passed).toBe(false);
   });
 });
 

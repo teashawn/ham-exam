@@ -54,6 +54,19 @@ describe('extractCorrectAnswer', () => {
     expect(extractCorrectAnswer('Question (Б) extra text')).toBe(null);
     expect(extractCorrectAnswer('(Б) at start')).toBe(null);
   });
+
+  it('should handle Latin A as correct answer', () => {
+    expect(extractCorrectAnswer('Question text (A)')).toBe('А');
+  });
+
+  it('should handle Latin B as correct answer', () => {
+    expect(extractCorrectAnswer('Question text (B)')).toBe('В');
+  });
+
+  it('should handle trailing period after parenthesis', () => {
+    expect(extractCorrectAnswer('Question text (Б).')).toBe('Б');
+    expect(extractCorrectAnswer('Question text (A).')).toBe('А');
+  });
 });
 
 describe('removeAnswerFromQuestion', () => {
@@ -74,6 +87,15 @@ describe('removeAnswerFromQuestion', () => {
     expect(removeAnswerFromQuestion('Question without answer')).toBe(
       'Question without answer'
     );
+  });
+
+  it('should handle Latin letters in answer indicator', () => {
+    expect(removeAnswerFromQuestion('Question text (A)')).toBe('Question text');
+    expect(removeAnswerFromQuestion('Question text (B)')).toBe('Question text');
+  });
+
+  it('should handle trailing period after answer', () => {
+    expect(removeAnswerFromQuestion('Question text (Б).')).toBe('Question text');
   });
 });
 
@@ -184,6 +206,32 @@ describe('parseOptions', () => {
   it('should return empty array for invalid format', () => {
     const options = parseOptions('No options here');
     expect(options).toHaveLength(0);
+  });
+
+  it('should handle Latin A at first position', () => {
+    const text = `A. First option; Б. Second option; В. Third option; Г. Fourth option.`;
+    const options = parseOptions(text);
+
+    expect(options).toHaveLength(4);
+    expect(options[0]).toEqual({ letter: 'А', text: 'First option' });
+  });
+
+  it('should handle Latin B in options', () => {
+    const text = `А. First option; B. Second option; В. Third option; Г. Fourth option.`;
+    const options = parseOptions(text);
+
+    expect(options).toHaveLength(4);
+    expect(options[1]).toEqual({ letter: 'В', text: 'Second option' });
+  });
+
+  it('should skip Latin A if not at first position', () => {
+    // Latin A at position 1 should not be converted
+    const text = `Б. First option; A. Second option`;
+    const options = parseOptions(text);
+
+    // Only Б should be parsed, A at wrong position is ignored
+    expect(options).toHaveLength(1);
+    expect(options[0].letter).toBe('Б');
   });
 });
 

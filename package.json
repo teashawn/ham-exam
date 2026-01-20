@@ -23,5 +23,8 @@
     "bulgaria",
     "amateur-radio"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.17"
+  }
 }
