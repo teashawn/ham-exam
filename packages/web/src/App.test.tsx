@@ -397,6 +397,36 @@ describe('App', () => {
       });
     });
 
+    it('should show failed result styling when exam is failed', async () => {
+      render(<App />);
+
+      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
+      fireEvent.click(startButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Navigate to last question without answering (to fail the exam)
+      for (let i = 0; i < 3; i++) {
+        const nextButton = screen.getByRole('button', { name: 'Напред' });
+        fireEvent.click(nextButton);
+        await waitFor(() => {
+          expect(screen.getByText(`Въпрос ${i + 2}`)).toBeInTheDocument();
+        });
+      }
+
+      // Click finish without answering any questions (will fail)
+      const finishButton = screen.getByRole('button', { name: 'Завърши' });
+      fireEvent.click(finishButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Резултати')).toBeInTheDocument();
+        expect(screen.getByText('Неуспешен')).toBeInTheDocument();
+        expect(screen.getByText('0%')).toBeInTheDocument();
+      });
+    });
+
     it('should go home from results', async () => {
       render(<App />);
 
@@ -532,6 +562,30 @@ describe('App', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+      });
+    });
+
+    it('should show failed history entry styling', async () => {
+      mockStorage['ham-exam:exam-history'] = JSON.stringify([
+        {
+          sessionId: 'session-1',
+          score: 40,
+          passed: false,
+          totalQuestions: 40,
+          correctAnswers: 16,
+          completedAt: new Date().toISOString(),
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+        },
+      ]);
+
+      render(<App />);
+
+      const historyButton = screen.getByRole('button', { name: 'История' });
+      fireEvent.click(historyButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('40%')).toBeInTheDocument();
+        expect(screen.getByText('16/40')).toBeInTheDocument();
       });
     });
 
