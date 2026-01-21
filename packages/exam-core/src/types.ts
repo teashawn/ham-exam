@@ -65,6 +65,8 @@ export interface ExamConfig {
   };
   /** Whether to shuffle question order within the exam */
   shuffleQuestions: boolean;
+  /** Whether to shuffle option order within each question */
+  shuffleOptions: boolean;
 }
 
 /**
@@ -77,6 +79,7 @@ export const DEFAULT_EXAM_CONFIG: ExamConfig = {
     3: 10, // Regulatory Framework
   },
   shuffleQuestions: true,
+  shuffleOptions: false,
 };
 
 /**

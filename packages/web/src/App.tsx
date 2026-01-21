@@ -7,12 +7,14 @@ import type {
   UserProfile,
   AnswerLetter,
 } from '@ham-exam/exam-core';
-import { DEFAULT_EXAM_CONFIG } from '@ham-exam/exam-core';
 import {
+  DEFAULT_EXAM_CONFIG,
   createExamSession,
   recordAnswer,
   completeExam,
   getExamProgress,
+} from '@ham-exam/exam-core';
+import {
   loadUserProfile,
   saveUserProfile,
   createUserProfile,
@@ -23,7 +25,7 @@ import {
   addToHistory,
   calculateHistoryStats,
   clearExamHistory,
-} from '@ham-exam/exam-core';
+} from './lib/storage';
 import type { AppView } from './types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
