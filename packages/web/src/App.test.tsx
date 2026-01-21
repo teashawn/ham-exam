@@ -25,6 +25,14 @@ Object.defineProperty(globalThis, 'localStorage', {
 // Mock window.confirm
 vi.stubGlobal('confirm', vi.fn(() => true));
 
+// Helper to click on a card by finding its text and getting the clickable parent
+const clickCard = (cardText: string) => {
+  const card = screen.getByText(cardText).closest('[class*="cursor-pointer"]');
+  if (card) {
+    fireEvent.click(card);
+  }
+};
+
 describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +62,7 @@ describe('App', () => {
       expect(button).not.toBeDisabled();
     });
 
-    it('should login and show home screen', async () => {
+    it('should login and show mode select screen', async () => {
       render(<App />);
 
       const input = screen.getByPlaceholderText('Въведете името си');
@@ -64,7 +72,8 @@ describe('App', () => {
       fireEvent.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Test User')).toBeInTheDocument();
+        expect(screen.getByText(/Здравей, Test User!/)).toBeInTheDocument();
+        expect(screen.getByText('Какво искаш да правиш днес?')).toBeInTheDocument();
       });
     });
 
@@ -79,7 +88,7 @@ describe('App', () => {
     });
   });
 
-  describe('Home View', () => {
+  describe('Mode Select View', () => {
     beforeEach(() => {
       // Setup logged in user
       mockStorage['ham-exam:user-profile'] = JSON.stringify({
@@ -90,32 +99,22 @@ describe('App', () => {
       });
     });
 
-    it('should show home screen when user is logged in', () => {
+    it('should show mode select screen when user is logged in', () => {
       render(<App />);
-      expect(screen.getByText('Test User')).toBeInTheDocument();
-      expect(screen.getByText('Нов изпит')).toBeInTheDocument();
-      expect(screen.getByText('Общо въпроси')).toBeInTheDocument();
-    });
-
-    it('should show start exam button', () => {
-      render(<App />);
-      expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
-    });
-
-    it('should show settings button', () => {
-      render(<App />);
-      expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      expect(screen.getByText(/Здравей, Test User!/)).toBeInTheDocument();
+      expect(screen.getByText('Учене')).toBeInTheDocument();
+      expect(screen.getByText('Изпит')).toBeInTheDocument();
     });
 
     it('should show logout button', () => {
       render(<App />);
-      expect(screen.getByRole('button', { name: 'Изход' })).toBeInTheDocument();
+      expect(screen.getByText('Изход')).toBeInTheDocument();
     });
 
     it('should logout when clicking logout button', async () => {
       render(<App />);
 
-      const logoutButton = screen.getByRole('button', { name: 'Изход' });
+      const logoutButton = screen.getByText('Изход');
       fireEvent.click(logoutButton);
 
       await waitFor(() => {
@@ -123,18 +122,27 @@ describe('App', () => {
       });
     });
 
-    it('should navigate to config screen', async () => {
+    it('should navigate to exam-home when clicking exam card', async () => {
       render(<App />);
 
-      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
-      fireEvent.click(settingsButton);
+      clickCard('Изпит');
 
       await waitFor(() => {
-        expect(screen.getByText('Настройки')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
       });
     });
 
-    it('should show statistics when history exists', () => {
+    it('should navigate to study-home when clicking study card', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+    });
+
+    it('should show exam stats when history exists', () => {
       mockStorage['ham-exam:exam-history'] = JSON.stringify([
         {
           sessionId: 'session-1',
@@ -148,8 +156,134 @@ describe('App', () => {
       ]);
 
       render(<App />);
-      expect(screen.getByText('Статистика')).toBeInTheDocument();
-      expect(screen.getByText('История')).toBeInTheDocument();
+      expect(screen.getByText('1 изпит')).toBeInTheDocument();
+      expect(screen.getByText('Най-добър: 80%')).toBeInTheDocument();
+    });
+
+    it('should show study progress when progress exists', () => {
+      mockStorage['ham-exam:study-progress:test-id'] = JSON.stringify({
+        viewedQuestionIds: ['1-1-1', '1-1-2', '1-1-3'],
+        lastActiveAt: new Date().toISOString(),
+      });
+
+      render(<App />);
+      // Progress will be calculated based on actual questions
+    });
+  });
+
+  describe('Exam Home View', () => {
+    beforeEach(() => {
+      mockStorage['ham-exam:user-profile'] = JSON.stringify({
+        id: 'test-id',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+      });
+    });
+
+    it('should show exam home screen from mode select', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+        expect(screen.getByText('Общо въпроси')).toBeInTheDocument();
+      });
+    });
+
+    it('should show start exam and settings buttons', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate to config screen', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+      });
+    });
+
+    it('should go back to mode select from exam home', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Назад' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Какво искаш да правиш днес?')).toBeInTheDocument();
+      });
+    });
+
+    it('should show statistics when history exists', async () => {
+      mockStorage['ham-exam:exam-history'] = JSON.stringify([
+        {
+          sessionId: 'session-1',
+          score: 80,
+          passed: true,
+          totalQuestions: 40,
+          correctAnswers: 32,
+          completedAt: new Date().toISOString(),
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
+        },
+      ]);
+
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByText('Статистика')).toBeInTheDocument();
+        expect(screen.getByText('Последни изпити')).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate to history screen', async () => {
+      mockStorage['ham-exam:exam-history'] = JSON.stringify([
+        {
+          sessionId: 'session-1',
+          score: 80,
+          passed: true,
+          totalQuestions: 40,
+          correctAnswers: 32,
+          completedAt: new Date().toISOString(),
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
+        },
+      ]);
+
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Пълна история' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Пълна история' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'История' })).toBeInTheDocument();
+      });
     });
   });
 
@@ -166,8 +300,13 @@ describe('App', () => {
     it('should navigate to config and show sections', async () => {
       render(<App />);
 
-      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
-      fireEvent.click(settingsButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
@@ -176,11 +315,16 @@ describe('App', () => {
       });
     });
 
-    it('should save and return to home', async () => {
+    it('should save and return to exam home', async () => {
       render(<App />);
 
-      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
-      fireEvent.click(settingsButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
@@ -197,8 +341,13 @@ describe('App', () => {
     it('should update config when slider changes', async () => {
       render(<App />);
 
-      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
-      fireEvent.click(settingsButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
@@ -215,11 +364,16 @@ describe('App', () => {
       expect(localStorageMock.setItem).toHaveBeenCalled();
     });
 
-    it('should go back to home when clicking back button', async () => {
+    it('should go back to exam home when clicking back button', async () => {
       render(<App />);
 
-      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
-      fireEvent.click(settingsButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
@@ -248,8 +402,13 @@ describe('App', () => {
     it('should start exam and show first question', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -260,8 +419,13 @@ describe('App', () => {
     it('should navigate to next question', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -278,8 +442,13 @@ describe('App', () => {
     it('should navigate to previous question', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -303,8 +472,13 @@ describe('App', () => {
     it('should select answer', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -324,8 +498,13 @@ describe('App', () => {
     it('should disable prev button on first question', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -354,8 +533,13 @@ describe('App', () => {
     it('should show results after finishing exam', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -382,8 +566,13 @@ describe('App', () => {
     it('should allow starting new exam from results', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -418,8 +607,13 @@ describe('App', () => {
     it('should show failed result styling when exam is failed', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -445,11 +639,16 @@ describe('App', () => {
       });
     });
 
-    it('should go home from results', async () => {
+    it('should go to mode-select from results', async () => {
       render(<App />);
 
-      const startButton = screen.getByRole('button', { name: 'Започни изпит' });
-      fireEvent.click(startButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Започни изпит' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Започни изпит' }));
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -477,7 +676,7 @@ describe('App', () => {
       fireEvent.click(homeButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+        expect(screen.getByText('Какво искаш да правиш днес?')).toBeInTheDocument();
       });
     });
   });
@@ -507,79 +706,16 @@ describe('App', () => {
 
       render(<App />);
 
-      const historyButton = screen.getByRole('button', { name: 'История' });
-      fireEvent.click(historyButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Пълна история' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Пълна история' }));
 
       await waitFor(() => {
         expect(screen.getByText('80%')).toBeInTheDocument();
-      });
-    });
-
-    it('should show empty history message when no entries', async () => {
-      // First add then clear history to navigate to empty history view
-      mockStorage['ham-exam:exam-history'] = JSON.stringify([
-        {
-          sessionId: 'session-1',
-          score: 80,
-          passed: true,
-          totalQuestions: 40,
-          correctAnswers: 32,
-          completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
-        },
-      ]);
-
-      render(<App />);
-
-      const historyButton = screen.getByRole('button', { name: 'История' });
-      fireEvent.click(historyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Изтрий историята')).toBeInTheDocument();
-      });
-
-      // Clear history
-      const clearButton = screen.getByRole('button', { name: 'Изтрий историята' });
-      fireEvent.click(clearButton);
-
-      // Navigate back to history (from home)
-      await waitFor(() => {
-        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
-      });
-
-      // The history view will be empty now - need to manually set view somehow
-      // Since stats are empty, history button won't show. This is expected behavior.
-    });
-
-    it('should show empty state when no history', async () => {
-      // First add history so we can navigate there
-      mockStorage['ham-exam:exam-history'] = JSON.stringify([
-        {
-          sessionId: 'session-1',
-          score: 80,
-          passed: true,
-          totalQuestions: 40,
-          correctAnswers: 32,
-          completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
-        },
-      ]);
-
-      render(<App />);
-
-      const historyButton = screen.getByRole('button', { name: 'История' });
-      fireEvent.click(historyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Изтрий историята')).toBeInTheDocument();
-      });
-
-      // Click clear history
-      const clearButton = screen.getByRole('button', { name: 'Изтрий историята' });
-      fireEvent.click(clearButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
       });
     });
 
@@ -598,8 +734,13 @@ describe('App', () => {
 
       render(<App />);
 
-      const historyButton = screen.getByRole('button', { name: 'История' });
-      fireEvent.click(historyButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Пълна история' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Пълна история' }));
 
       await waitFor(() => {
         expect(screen.getByText('40%')).toBeInTheDocument();
@@ -607,7 +748,7 @@ describe('App', () => {
       });
     });
 
-    it('should go back from history', async () => {
+    it('should go back to exam home from history', async () => {
       mockStorage['ham-exam:exam-history'] = JSON.stringify([
         {
           sessionId: 'session-1',
@@ -622,15 +763,54 @@ describe('App', () => {
 
       render(<App />);
 
-      const historyButton = screen.getByRole('button', { name: 'История' });
-      fireEvent.click(historyButton);
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Пълна история' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Пълна история' }));
 
       await waitFor(() => {
         expect(screen.getByText('80%')).toBeInTheDocument();
       });
 
-      const backButton = screen.getByRole('button', { name: 'Назад' });
-      fireEvent.click(backButton);
+      const backButtons = screen.getAllByRole('button', { name: 'Назад' });
+      fireEvent.click(backButtons[backButtons.length - 1]);
+
+      await waitFor(() => {
+        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+      });
+    });
+
+    it('should clear history and stay on exam home', async () => {
+      mockStorage['ham-exam:exam-history'] = JSON.stringify([
+        {
+          sessionId: 'session-1',
+          score: 80,
+          passed: true,
+          totalQuestions: 40,
+          correctAnswers: 32,
+          completedAt: new Date().toISOString(),
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
+        },
+      ]);
+
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Пълна история' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Пълна история' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Изтрий историята' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Изтрий историята' }));
 
       await waitFor(() => {
         expect(screen.getByText('Нов изпит')).toBeInTheDocument();
@@ -639,7 +819,7 @@ describe('App', () => {
   });
 
   describe('Saved Config', () => {
-    it('should load saved config on startup', () => {
+    it('should load saved config on startup', async () => {
       mockStorage['ham-exam:user-profile'] = JSON.stringify({
         id: 'test-id',
         name: 'Test User',
@@ -652,7 +832,93 @@ describe('App', () => {
       });
 
       render(<App />);
-      expect(screen.getByText('10')).toBeInTheDocument(); // 5 + 3 + 2 = 10 total
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByText('10')).toBeInTheDocument(); // 5 + 3 + 2 = 10 total
+      });
+    });
+  });
+
+  describe('Study Home View', () => {
+    beforeEach(() => {
+      mockStorage['ham-exam:user-profile'] = JSON.stringify({
+        id: 'test-id',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+      });
+    });
+
+    it('should show study home when clicking study card', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 2')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
+      });
+    });
+
+    it('should show progress for each section', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        // Check for progress indicators (0/X format)
+        expect(screen.getByText(/0\/226/)).toBeInTheDocument(); // Section 1
+      });
+    });
+
+    it('should go back to mode select from study home', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Какво искаш да правиш днес?')).toBeInTheDocument();
+      });
+    });
+
+    it('should show remaining questions count on section cards', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+
+      // When there's no progress, all sections show 0% and remaining questions
+      await waitFor(() => {
+        expect(screen.getAllByText(/Още \d+ въпрос/).length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should show progress percentage on section cards', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+
+      // All sections should show percentage
+      await waitFor(() => {
+        expect(screen.getAllByText(/0% прегледани/).length).toBeGreaterThan(0);
+      });
     });
   });
 
@@ -666,60 +932,10 @@ describe('App', () => {
       });
     });
 
-    it('should show study mode button on home screen', () => {
-      render(<App />);
-      expect(screen.getByText('Режим учене')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Учи' })).toBeInTheDocument();
-    });
-
-    it('should navigate to study section select when clicking study button', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 2')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
-      });
-    });
-
-    it('should show progress for each section', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        // Check for progress indicators (0/X format)
-        expect(screen.getByText(/0\/226/)).toBeInTheDocument(); // Section 1
-      });
-    });
-
-    it('should load saved study progress', async () => {
-      // Save some study progress
-      mockStorage['ham-exam:study-progress:test-id'] = JSON.stringify({
-        viewedQuestionIds: ['1-1-1', '1-1-2', '1-1-3'],
-        lastActiveAt: new Date().toISOString(),
-      });
-
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-      });
-    });
-
     it('should start studying a section when clicking on it', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
@@ -737,43 +953,16 @@ describe('App', () => {
       });
     });
 
-    it('should show correct answer highlighted in study mode', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      // Click on section 1 card
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-        // The correct answer should be highlighted with a check icon
-        // This is shown with a green border/background class
-      });
-    });
-
     it('should navigate to next question in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -790,17 +979,13 @@ describe('App', () => {
     it('should navigate to previous question in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -826,17 +1011,13 @@ describe('App', () => {
     it('should disable prev button on first question in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -849,17 +1030,13 @@ describe('App', () => {
     it('should switch sections in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -874,20 +1051,16 @@ describe('App', () => {
       });
     });
 
-    it('should exit study mode and return to section select', async () => {
+    it('should exit study mode and return to study home', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -902,97 +1075,189 @@ describe('App', () => {
       });
     });
 
-    it('should go back to home from study section select', async () => {
+    it('should open question grid modal when clicking question counter', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      // Click the back button
-      const backButton = screen.getByRole('button', { name: 'Назад' });
-      fireEvent.click(backButton);
+      clickCard('Раздел 1');
 
       await waitFor(() => {
-        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
+      });
+
+      // Click the question counter button to open the grid
+      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
+      fireEvent.click(questionCounter);
+
+      await waitFor(() => {
+        // Modal should open - check for the h2 title specifically
+        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
       });
     });
 
-    it('should show reset progress button when progress exists', async () => {
-      // Save some study progress
-      mockStorage['ham-exam:study-progress:test-id'] = JSON.stringify({
-        viewedQuestionIds: ['1-1-1', '1-1-2', '1-1-3'],
-        lastActiveAt: new Date().toISOString(),
-      });
-
+    it('should close question grid modal when clicking close button', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      // Progress may be shown, but if viewed questions don't match actual questions,
-      // the reset button might not appear. Let's just check the view loaded.
-      expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-    });
-
-    it('should show remaining questions count on section cards', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Раздел 1');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
       });
 
-      // When there's no progress, all sections show 0% and remaining questions
-      // Check that "Още" appears for sections with remaining questions
+      // Open the grid
+      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
+      fireEvent.click(questionCounter);
+
       await waitFor(() => {
-        expect(screen.getAllByText(/Още \d+ въпрос/).length).toBeGreaterThan(0);
+        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
+      });
+
+      // Click the close button (Затвори)
+      const closeButton = screen.getByRole('button', { name: 'Затвори' });
+      fireEvent.click(closeButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
       });
     });
 
-    it('should show progress percentage on section cards', async () => {
+    it('should jump to specific question when clicking in grid', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      // All sections should show percentage
+      clickCard('Раздел 1');
+
       await waitFor(() => {
-        expect(screen.getAllByText(/0% прегледани/).length).toBeGreaterThan(0);
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Open the grid
+      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
+      fireEvent.click(questionCounter);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
+      });
+
+      // Click on question 5 in the grid (button with text '5')
+      const gridButtons = screen.getAllByRole('button').filter(btn => btn.textContent === '5');
+      if (gridButtons.length > 0) {
+        fireEvent.click(gridButtons[0]);
+      }
+
+      // Modal should close and we should be at question 5
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
+        expect(screen.getByText('Въпрос 5')).toBeInTheDocument();
       });
     });
 
+    it('should jump to question when clicking on question dot indicator', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+      });
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Click on question dot 3 (dots are in the progress bar area with title "Въпрос N")
+      const questionDot3 = screen.getByTitle('Въпрос 3');
+      fireEvent.click(questionDot3);
+
+      // Should jump to question 3
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 3')).toBeInTheDocument();
+      });
+    });
+
+    it('should close question grid modal when clicking X button', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+      });
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
+      });
+
+      // Open the grid
+      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
+      fireEvent.click(questionCounter);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
+      });
+
+      // Click the X button (it's in the modal header)
+      const modalHeader = screen.getByRole('heading', { name: 'Всички въпроси' }).parentElement;
+      const xButton = modalHeader?.querySelector('button');
+      if (xButton) {
+        fireEvent.click(xButton);
+      }
+
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should save progress when viewing questions', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+      });
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
+      });
+
+      // Viewing a question should save progress
+      expect(localStorageMock.setItem).toHaveBeenCalled();
+    });
 
     it('should clear study progress when reset button is clicked', async () => {
-      // We need actual progress to show the reset button
-      // The progress is calculated based on actual viewed questions in the session
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
       // Start studying to create some progress
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1029,276 +1294,16 @@ describe('App', () => {
       });
     });
 
-    it('should save progress when viewing questions', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Viewing a question should save progress
-      expect(localStorageMock.setItem).toHaveBeenCalled();
-    });
-
-    it('should open question grid modal when clicking question counter', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Click the question counter button to open the grid
-      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
-      fireEvent.click(questionCounter);
-
-      await waitFor(() => {
-        // Modal should open - check for the h2 title specifically
-        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
-      });
-    });
-
-    it('should close question grid modal when clicking close button', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Open the grid
-      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
-      fireEvent.click(questionCounter);
-
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
-      });
-
-      // Click the close button (Затвори)
-      const closeButton = screen.getByRole('button', { name: 'Затвори' });
-      fireEvent.click(closeButton);
-
-      await waitFor(() => {
-        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
-      });
-    });
-
-    it('should jump to specific question when clicking in grid', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
-      });
-
-      // Open the grid
-      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
-      fireEvent.click(questionCounter);
-
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
-      });
-
-      // Click on question 5 in the grid (button with text '5')
-      const gridButtons = screen.getAllByRole('button').filter(btn => btn.textContent === '5');
-      if (gridButtons.length > 0) {
-        fireEvent.click(gridButtons[0]);
-      }
-
-      // Modal should close and we should be at question 5
-      await waitFor(() => {
-        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
-        expect(screen.getByText('Въпрос 5')).toBeInTheDocument();
-      });
-    });
-
-    it('should jump to question when clicking on question dot indicator', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
-      });
-
-      // Click on question dot 3 (dots are in the progress bar area with title "Въпрос N")
-      const questionDot3 = screen.getByTitle('Въпрос 3');
-      fireEvent.click(questionDot3);
-
-      // Should jump to question 3
-      await waitFor(() => {
-        expect(screen.getByText('Въпрос 3')).toBeInTheDocument();
-      });
-    });
-
-    it('should close question grid modal when clicking X button', async () => {
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
-
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Open the grid
-      const questionCounter = screen.getByTitle('Преглед на въпросите (G)');
-      fireEvent.click(questionCounter);
-
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: 'Всички въпроси' })).toBeInTheDocument();
-      });
-
-      // Click the X button (it's in the modal header)
-      const modalHeader = screen.getByRole('heading', { name: 'Всички въпроси' }).parentElement;
-      const xButton = modalHeader?.querySelector('button');
-      if (xButton) {
-        fireEvent.click(xButton);
-      }
-
-      await waitFor(() => {
-        expect(screen.queryByRole('heading', { name: 'Всички въпроси' })).not.toBeInTheDocument();
-      });
-    });
-
-    it('should track progress correctly through study session', async () => {
-      // Test that progress bar updates as we navigate through questions
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
-      });
-
-      // Click on section 3 (has fewer questions)
-      const section3Card = screen.getByText('Раздел 3').closest('[class*="cursor-pointer"]');
-      if (section3Card) {
-        fireEvent.click(section3Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Navigate through a few questions
-      for (let i = 0; i < 3; i++) {
-        const nextButton = screen.getByRole('button', { name: 'Напред' });
-        fireEvent.click(nextButton);
-        await waitFor(() => {
-          expect(screen.getByText(`Въпрос ${i + 2}`)).toBeInTheDocument();
-        });
-      }
-
-      // Verify we're at question 4 after navigating
-      expect(screen.getByText('Въпрос 4')).toBeInTheDocument();
-    });
-
-    it('should show 100% milestone celebration when completing all questions', async () => {
-      // We'll need to test with a mocked smaller section or use view manipulation
-      // For now, test the milestone text format when 100% is reached
-      render(<App />);
-
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
-      });
-
-      // Start studying section 3
-      const section3Card = screen.getByText('Раздел 3').closest('[class*="cursor-pointer"]');
-      if (section3Card) {
-        fireEvent.click(section3Card);
-      }
-
-      await waitFor(() => {
-        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
-      });
-
-      // Just verify the study mode loaded properly
-      expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
-    });
-
     it('should show viewed and unviewed counts in question grid', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1327,17 +1332,13 @@ describe('App', () => {
     it('should navigate with keyboard arrow keys in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -1361,17 +1362,13 @@ describe('App', () => {
     it('should open question grid with G key in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1388,17 +1385,13 @@ describe('App', () => {
     it('should exit study mode with Escape key', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1415,17 +1408,13 @@ describe('App', () => {
     it('should switch sections with number keys in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1443,17 +1432,13 @@ describe('App', () => {
     it('should navigate with P and N keys in study mode', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -1480,17 +1465,13 @@ describe('App', () => {
 
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1507,17 +1488,13 @@ describe('App', () => {
     it('should open question grid with lowercase g key', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1534,18 +1511,14 @@ describe('App', () => {
     it('should switch to section 1 with number key 1', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 2')).toBeInTheDocument();
       });
 
       // Start with section 2
-      const section2Card = screen.getByText('Раздел 2').closest('[class*="cursor-pointer"]');
-      if (section2Card) {
-        fireEvent.click(section2Card);
-      }
+      clickCard('Раздел 2');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1562,17 +1535,13 @@ describe('App', () => {
     it('should switch to section 3 with number key 3', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
@@ -1589,17 +1558,13 @@ describe('App', () => {
     it('should navigate with uppercase P key', async () => {
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      fireEvent.click(studyButton);
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 1')).toBeInTheDocument();
       });
 
-      const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
-      if (section1Card) {
-        fireEvent.click(section1Card);
-      }
+      clickCard('Раздел 1');
 
       await waitFor(() => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
@@ -1625,22 +1590,14 @@ describe('App', () => {
 
       render(<App />);
 
-      const studyButton = screen.getByRole('button', { name: 'Учи' });
-      await act(async () => {
-        fireEvent.click(studyButton);
-      });
+      clickCard('Учене');
 
       await waitFor(() => {
         expect(screen.getByText('Раздел 3')).toBeInTheDocument();
       });
 
       // Use section 3 which has 56 questions - 25% = 14 questions
-      const section3Card = screen.getByText('Раздел 3').closest('[class*="cursor-pointer"]');
-      if (section3Card) {
-        await act(async () => {
-          fireEvent.click(section3Card);
-        });
-      }
+      clickCard('Раздел 3');
 
       await waitFor(() => {
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();

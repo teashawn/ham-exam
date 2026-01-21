@@ -40,14 +40,17 @@ import { initTheme } from './lib/theme';
 import type { AppView } from './types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Radio, Trophy, BookOpen, Settings, History, ChevronLeft, ChevronRight, Check, BarChart3, GraduationCap, Eye, Grid3X3, X, LogOut } from 'lucide-react';
+import { Radio, Trophy, ChevronLeft, ChevronRight, Check, GraduationCap, Eye, Grid3X3, X, History, BarChart3 } from 'lucide-react';
 import { SectionSelect } from '@/components/ui/section-select';
+import { ModeSelectView } from '@/components/ModeSelectView';
+import { ExamHomeView, type HistoryStats } from '@/components/ExamHomeView';
+import { StudyHomeView } from '@/components/StudyHomeView';
 import examDataJson from './data/exam-questions.json';
 
 const examData = examDataJson as ExamData;
@@ -78,13 +81,25 @@ function App() {
     const savedUser = loadUserProfile();
     if (savedUser) {
       setUser(savedUser);
-      setView('home');
+      initializeStudySession(savedUser);
+      setView('mode-select');
     }
 
     const savedConfig = loadExamConfig();
     if (savedConfig) {
       setConfig(savedConfig);
     }
+  }, []);
+
+  // Initialize study session for a user (used on login and mode-select)
+  const initializeStudySession = useCallback((userProfile: UserProfile) => {
+    const newSession = createStudySession(examData, { sectionNumber: 0 }, userProfile.id);
+    const savedProgress = loadStudyProgress(userProfile.id);
+    if (savedProgress) {
+      loadViewedQuestions(newSession, savedProgress.viewedQuestionIds);
+    }
+    setStudySession(newSession);
+    setStudyProgress(getStudyProgress(newSession, examData));
   }, []);
 
   const handleLogin = useCallback((e: React.FormEvent) => {
@@ -95,8 +110,9 @@ function App() {
     const profile = createUserProfile(loginName.trim());
     saveUserProfile(profile);
     setUser(profile);
-    setView('home');
-  }, [loginName]);
+    initializeStudySession(profile);
+    setView('mode-select');
+  }, [loginName, initializeStudySession]);
 
   const handleLogout = useCallback(() => {
     clearUserProfile();
@@ -159,30 +175,21 @@ function App() {
   }, [session, config]);
 
   const handleGoHome = useCallback(() => {
-    setView('home');
+    setView('mode-select');
     setSession(null);
     setResult(null);
     setCurrentQuestionIndex(0);
   }, []);
 
-  // Study mode handlers
-  const handleOpenStudyMode = useCallback(() => {
-    /* c8 ignore next */
-    if (!user) return;
+  // Navigation to exam home
+  const handleSelectExamMode = useCallback(() => {
+    setView('exam-home');
+  }, []);
 
-    // Create a study session for all sections to calculate progress
-    const newSession = createStudySession(examData, { sectionNumber: 0 }, user.id);
-
-    // Load saved progress
-    const savedProgress = loadStudyProgress(user.id);
-    if (savedProgress) {
-      loadViewedQuestions(newSession, savedProgress.viewedQuestionIds);
-    }
-
-    setStudySession(newSession);
-    setStudyProgress(getStudyProgress(newSession, examData));
-    setView('study-section-select');
-  }, [user]);
+  // Navigation to study home
+  const handleSelectStudyMode = useCallback(() => {
+    setView('study-home');
+  }, []);
 
   const handleStartStudy = useCallback((sectionNumber: number) => {
     /* c8 ignore next */
@@ -241,9 +248,9 @@ function App() {
     // Save progress before exiting
     saveStudyProgress(user.id, Array.from(studySession.viewedQuestions));
 
-    // Update progress state and return to section select
+    // Update progress state and return to study home
     setStudyProgress(getStudyProgress(studySession, examData));
-    setView('study-section-select');
+    setView('study-home');
     setShowQuestionGrid(false);
   }, [studySession, user]);
 
@@ -384,107 +391,46 @@ function App() {
     );
   }
 
-  // Home Screen
-  if (view === 'home') {
+  // Mode Select Screen
+  if (view === 'mode-select' && user) {
     return (
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
-        <header className="p-4 bg-card border-b flex items-center justify-between shadow-soft">
-          <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-primary" />
-            <h1 className="text-xl font-semibold">HAM Exam</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{user?.name}</span>
-            <ThemeToggle />
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-all duration-200 hover:scale-105 active:scale-95"
-              aria-label="Изход"
-              title="Изход"
-            >
-              <LogOut className="w-5 h-5 text-muted-foreground" />
-            </button>
-          </div>
-        </header>
-        <main className="flex-1 p-4 space-y-4 overflow-y-auto">
-          <Card className="animate-fade-in">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                Нов изпит
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center p-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-[var(--radius)]">
-                <p className="text-sm text-muted-foreground mb-1">Общо въпроси</p>
-                <p className="text-4xl font-bold text-primary">{totalQuestions}</p>
-              </div>
-              <div className="space-y-3">
-                <Button onClick={handleStartExam} className="w-full">
-                  Започни изпит
-                </Button>
-                <Button variant="outline" onClick={() => setView('config')} className="w-full">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Настройки
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <ModeSelectView
+        user={user}
+        studyProgress={studyProgress}
+        history={history}
+        onSelectStudy={handleSelectStudyMode}
+        onSelectExam={handleSelectExamMode}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
-          <Card className="animate-fade-in stagger-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-primary" />
-                Режим учене
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Преглед на всички въпроси с показани верни отговори.
-              </p>
-              <Button variant="outline" onClick={handleOpenStudyMode} className="w-full">
-                <GraduationCap className="w-4 h-4 mr-2" />
-                Учи
-              </Button>
-            </CardContent>
-          </Card>
+  // Exam Home Screen
+  if (view === 'exam-home' && user) {
+    return (
+      <ExamHomeView
+        user={user}
+        totalQuestions={totalQuestions}
+        stats={stats as HistoryStats}
+        history={history}
+        onStartExam={handleStartExam}
+        onOpenConfig={() => setView('config')}
+        onOpenHistory={() => setView('history')}
+        onBack={handleGoHome}
+      />
+    );
+  }
 
-          {stats.totalExams > 0 && (
-            <Card className="animate-fade-in stagger-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  Статистика
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-4 bg-muted rounded-[var(--radius)] transition-colors">
-                    <p className="text-2xl font-bold">{stats.totalExams}</p>
-                    <p className="text-xs text-muted-foreground">Изпити</p>
-                  </div>
-                  <div className="text-center p-4 bg-success/10 rounded-[var(--radius)] transition-colors">
-                    <p className="text-2xl font-bold text-success">{stats.passRate}%</p>
-                    <p className="text-xs text-muted-foreground">Успеваемост</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-[var(--radius)] transition-colors">
-                    <p className="text-2xl font-bold">{stats.averageScore}%</p>
-                    <p className="text-xs text-muted-foreground">Среден резултат</p>
-                  </div>
-                  <div className="text-center p-4 bg-primary/10 rounded-[var(--radius)] transition-colors">
-                    <p className="text-2xl font-bold text-primary">{stats.bestScore}%</p>
-                    <p className="text-xs text-muted-foreground">Най-добър</p>
-                  </div>
-                </div>
-                <Button variant="outline" onClick={() => setView('history')} className="w-full">
-                  <History className="w-4 h-4 mr-2" />
-                  История
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </main>
-      </div>
+  // Study Home Screen
+  if (view === 'study-home' && studySession) {
+    return (
+      <StudyHomeView
+        studyProgress={studyProgress}
+        sections={examData.sections}
+        onStartStudy={handleStartStudy}
+        onResetProgress={handleResetStudyProgress}
+        onBack={handleGoHome}
+      />
     );
   }
 
@@ -499,7 +445,7 @@ function App() {
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
         <header className="p-4 bg-card border-b flex items-center gap-3 shadow-soft">
           <button
-            onClick={() => setView('home')}
+            onClick={() => setView('exam-home')}
             className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
             aria-label="Назад"
           >
@@ -536,7 +482,7 @@ function App() {
               </div>
             </CardContent>
           </Card>
-          <Button onClick={() => setView('home')} className="w-full">
+          <Button onClick={() => setView('exam-home')} className="w-full">
             <Check className="w-4 h-4 mr-2" />
             Запази
           </Button>
@@ -728,12 +674,14 @@ function App() {
 
   // History Screen
   if (view === 'history') {
+    const handleBackToExamHome = () => setView('exam-home');
     return (
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
         <header className="p-4 bg-card border-b flex items-center gap-3 shadow-soft">
           <button
-            onClick={handleGoHome}
+            onClick={handleBackToExamHome}
             className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
+            aria-label="Назад"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -799,7 +747,7 @@ function App() {
               onClick={() => {
                 if (confirm('Изтриване на историята?')) {
                   clearExamHistory();
-                  setView('home');
+                  setView('exam-home');
                 }
               }}
               className="w-full"
@@ -808,119 +756,9 @@ function App() {
             </Button>
           )}
 
-          <Button onClick={handleGoHome} className="w-full">
+          <Button onClick={handleBackToExamHome} className="w-full">
             Назад
           </Button>
-        </main>
-      </div>
-    );
-  }
-
-  // Study Section Select Screen
-  if (view === 'study-section-select' && studySession) {
-    const totalViewedAll = studyProgress.reduce((sum, p) => sum + p.viewedQuestions, 0);
-    const totalQuestionsAll = studyProgress.reduce((sum, p) => sum + p.totalQuestions, 0);
-    /* c8 ignore next */
-    const overallPercentage = totalQuestionsAll > 0 ? Math.round((totalViewedAll / totalQuestionsAll) * 100) : 0;
-
-    return (
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
-        <header className="p-4 bg-card border-b flex items-center gap-3 shadow-soft">
-          <button
-            onClick={handleGoHome}
-            className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
-            aria-label="Назад"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold font-display">Режим учене</h1>
-          </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full study-badge-gradient">
-            <GraduationCap className="w-4 h-4 text-white" />
-            <span className="text-xs font-semibold text-white font-display">УЧЕНЕ</span>
-          </div>
-        </header>
-        <main className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {/* Overall progress summary */}
-          <div className="text-center p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-[var(--radius)] animate-fade-in">
-            <p className="text-sm text-muted-foreground mb-1">Общ прогрес</p>
-            <p className="text-3xl font-bold font-display text-amber-600 dark:text-amber-400">{overallPercentage}%</p>
-            <p className="text-xs text-muted-foreground mt-1">{totalViewedAll} от {totalQuestionsAll} въпроса</p>
-          </div>
-
-          <p className="text-sm text-muted-foreground text-center mb-2">
-            Избери раздел за учене
-          </p>
-
-          {examData.sections.map((section, index) => {
-            const progress = studyProgress.find(
-              (p) => p.sectionNumber === section.metadata.sectionNumber
-            );
-            /* c8 ignore next 3 */
-            const viewedCount = progress?.viewedQuestions ?? 0;
-            const totalCount = progress?.totalQuestions ?? section.questions.length;
-            const percentage = progress?.percentage ?? 0;
-            const remaining = totalCount - viewedCount;
-
-            return (
-              <Card
-                key={section.metadata.sectionNumber}
-                className={cn(
-                  'cursor-pointer transition-all animate-slide-up',
-                  'hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5',
-                  'active:scale-[0.99]',
-                  `stagger-${index + 1}`
-                )}
-                onClick={() => handleStartStudy(section.metadata.sectionNumber)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="font-semibold font-display">Раздел {section.metadata.sectionNumber}</h3>
-                      <p className="text-sm text-muted-foreground">{section.metadata.title}</p>
-                    </div>
-                    {/* c8 ignore next 6 */}
-                    <span className={cn(
-                      'text-sm font-medium px-3 py-1 rounded-full transition-colors',
-                      percentage === 100
-                        ? 'bg-success/10 text-success'
-                        : 'bg-primary/10 text-primary'
-                    )}>
-                      {viewedCount}/{totalCount}
-                    </span>
-                  </div>
-                  <Progress value={percentage} className="h-2" />
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-xs text-muted-foreground">{percentage}% прегледани</p>
-                    {/* c8 ignore next 4 */}
-                    {remaining > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Още {remaining} {remaining === 1 ? 'въпрос' : 'въпроса'}
-                      </p>
-                    )}
-                    {/* c8 ignore next 5 */}
-                    {percentage === 100 && (
-                      <span className="text-xs text-success flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        Завършен
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          {studyProgress.some((p) => p.viewedQuestions > 0) && (
-            <Button
-              variant="outline"
-              onClick={handleResetStudyProgress}
-              className="w-full"
-            >
-              Изтрий прогреса
-            </Button>
-          )}
         </main>
       </div>
     );
@@ -940,7 +778,6 @@ function App() {
     const sectionViewedCount = currentSectionQuestions.filter(q =>
       studySession.viewedQuestions.has(q.id)
     ).length;
-    const sectionPercentage = Math.round((sectionViewedCount / currentSectionQuestions.length) * 100);
     const remaining = currentSectionQuestions.length - sectionViewedCount;
 
     // Mark question as viewed when displayed and check for milestones

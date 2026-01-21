@@ -26,4 +26,13 @@ export type {
 export { DEFAULT_EXAM_CONFIG } from '@ham-exam/exam-core';
 
 // Web-specific types
-export type AppView = 'login' | 'home' | 'config' | 'exam' | 'results' | 'history' | 'study-section-select' | 'study';
+export type AppView =
+  | 'login'
+  | 'mode-select'      // Mode selection screen (study or exam)
+  | 'exam-home'        // Exam dashboard
+  | 'study-home'       // Study dashboard (section selection)
+  | 'config'
+  | 'exam'
+  | 'results'
+  | 'history'
+  | 'study';
