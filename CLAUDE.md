@@ -82,6 +82,8 @@ packages/
 - Test files colocated with source: `foo.ts` → `foo.test.ts`
 - Web tests use `@testing-library/react`
 
+VERY IMPORTANT: ALWAYS ensure there is 100% code coverage with unit tests, before finishing a task. This is a hard requirement that is non-negotiable!
+
 ## Styling
 
 - Tailwind CSS v4 with shadcn/ui components
