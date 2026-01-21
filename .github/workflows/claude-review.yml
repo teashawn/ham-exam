@@ -16,5 +16,5 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           mode: agent
-          allowed_bots: "claude[bot],claude"
+          allowed_bots: "*"
           context_prompt: "/code-review"
