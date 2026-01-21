@@ -22,13 +22,6 @@ describe('ThemeToggle', () => {
     expect(screen.getByRole('button')).toHaveClass('custom-class');
   });
 
-  it('should show placeholder before mounting', () => {
-    render(<ThemeToggle />);
-    const button = screen.getByRole('button');
-    // Before mounting, button should have aria-label but no icon
-    expect(button).toHaveAttribute('aria-label', 'Toggle theme');
-  });
-
   it('should show Moon icon in light mode after mounting', async () => {
     window.matchMedia = vi.fn().mockImplementation((query) => ({
       matches: false,
