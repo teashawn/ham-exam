@@ -46,7 +46,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Radio, Trophy, BookOpen, Settings, History, ChevronLeft, ChevronRight, Check, BarChart3, GraduationCap, Eye, Grid3X3, X } from 'lucide-react';
+import { Radio, Trophy, BookOpen, Settings, History, ChevronLeft, ChevronRight, Check, BarChart3, GraduationCap, Eye, Grid3X3, X, LogOut } from 'lucide-react';
 import { SectionSelect } from '@/components/ui/section-select';
 import examDataJson from './data/exam-questions.json';
 
@@ -396,6 +396,14 @@ function App() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{user?.name}</span>
             <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-full bg-muted/50 hover:bg-muted transition-all duration-200 hover:scale-105 active:scale-95"
+              aria-label="Изход"
+              title="Изход"
+            >
+              <LogOut className="w-5 h-5 text-muted-foreground" />
+            </button>
           </div>
         </header>
         <main className="flex-1 p-4 space-y-4 overflow-y-auto">
@@ -475,14 +483,6 @@ function App() {
               </CardContent>
             </Card>
           )}
-
-          <Card className="animate-fade-in stagger-3">
-            <CardContent className="pt-5">
-              <Button variant="outline" onClick={handleLogout} className="w-full">
-                Изход
-              </Button>
-            </CardContent>
-          </Card>
         </main>
       </div>
     );
