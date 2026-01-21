@@ -1,0 +1,20 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          mode: agent
+          allowed_bots: "*"
+          context_prompt: "/code-review"
