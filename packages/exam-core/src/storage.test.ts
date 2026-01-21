@@ -151,7 +151,6 @@ describe('Exam History Storage', () => {
   const mockConfig: ExamConfig = {
     questionsPerSection: { 1: 20, 2: 10, 3: 10 },
     shuffleQuestions: true,
-    shuffleOptions: false,
   };
 
   beforeEach(() => {
@@ -306,7 +305,6 @@ describe('Exam Config Storage', () => {
       const config: ExamConfig = {
         questionsPerSection: { 1: 15, 2: 5, 3: 5 },
         shuffleQuestions: true,
-        shuffleOptions: true,
       };
 
       saveExamConfig(storage, config);
@@ -340,7 +338,6 @@ describe('calculateHistoryStats', () => {
     config: {
       questionsPerSection: { 1: 20, 2: 10, 3: 10 },
       shuffleQuestions: true,
-      shuffleOptions: false,
     },
   });
 

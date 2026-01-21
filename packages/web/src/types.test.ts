@@ -6,6 +6,5 @@ describe('types', () => {
     expect(DEFAULT_EXAM_CONFIG).toBeDefined();
     expect(DEFAULT_EXAM_CONFIG.questionsPerSection).toBeDefined();
     expect(DEFAULT_EXAM_CONFIG.shuffleQuestions).toBe(true);
-    expect(DEFAULT_EXAM_CONFIG.shuffleOptions).toBe(false);
   });
 });

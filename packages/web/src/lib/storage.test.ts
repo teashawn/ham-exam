@@ -104,7 +104,6 @@ describe('storage', () => {
       config: {
         questionsPerSection: { 1: 20, 2: 10, 3: 10 },
         shuffleQuestions: true,
-        shuffleOptions: false,
       },
     };
 
@@ -145,7 +144,6 @@ describe('storage', () => {
       const config: ExamConfig = {
         questionsPerSection: { 1: 20, 2: 10, 3: 10 },
         shuffleQuestions: true,
-        shuffleOptions: false,
       };
 
       addToHistory(result, config);
@@ -174,7 +172,6 @@ describe('storage', () => {
     const testConfig: ExamConfig = {
       questionsPerSection: { 1: 15, 2: 8, 3: 7 },
       shuffleQuestions: false,
-      shuffleOptions: true,
     };
 
     it('should save exam config', () => {
@@ -214,7 +211,7 @@ describe('storage', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date(),
-          config: { questionsPerSection: {}, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: {}, shuffleQuestions: true,  },
         },
         {
           sessionId: '2',
@@ -224,7 +221,7 @@ describe('storage', () => {
           totalQuestions: 40,
           correctAnswers: 24,
           completedAt: new Date(),
-          config: { questionsPerSection: {}, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: {}, shuffleQuestions: true,  },
         },
       ];
 

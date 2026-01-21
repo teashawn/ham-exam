@@ -143,7 +143,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -329,7 +329,6 @@ describe('App', () => {
       mockStorage['ham-exam:exam-config'] = JSON.stringify({
         questionsPerSection: { 1: 2, 2: 1, 3: 1 },
         shuffleQuestions: false,
-        shuffleOptions: false,
       });
     });
 
@@ -483,7 +482,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -507,7 +506,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -543,7 +542,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -574,7 +573,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 16,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -598,7 +597,7 @@ describe('App', () => {
           totalQuestions: 40,
           correctAnswers: 32,
           completedAt: new Date().toISOString(),
-          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true, shuffleOptions: false },
+          config: { questionsPerSection: { 1: 20, 2: 10, 3: 10 }, shuffleQuestions: true },
         },
       ]);
 
@@ -631,7 +630,6 @@ describe('App', () => {
       mockStorage['ham-exam:exam-config'] = JSON.stringify({
         questionsPerSection: { 1: 5, 2: 3, 3: 2 },
         shuffleQuestions: true,
-        shuffleOptions: false,
       });
 
       render(<App />);

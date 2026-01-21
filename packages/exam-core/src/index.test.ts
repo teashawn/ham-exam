@@ -10,7 +10,6 @@ describe('index exports', () => {
     expect(DEFAULT_EXAM_CONFIG.questionsPerSection[2]).toBe(10);
     expect(DEFAULT_EXAM_CONFIG.questionsPerSection[3]).toBe(10);
     expect(DEFAULT_EXAM_CONFIG.shuffleQuestions).toBe(true);
-    expect(DEFAULT_EXAM_CONFIG.shuffleOptions).toBe(false);
   });
 
   it('should export all engine functions', () => {
