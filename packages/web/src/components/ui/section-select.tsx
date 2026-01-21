@@ -76,7 +76,7 @@ const SectionSelect = React.forwardRef<HTMLButtonElement, SectionSelectProps>(
                   <SelectPrimitive.ItemIndicator className="flex-shrink-0">
                     <Check className="h-4 w-4 text-primary" />
                   </SelectPrimitive.ItemIndicator>
-                  <span className={cn('flex-1', !sections.find(s => s.sectionNumber === section.sectionNumber) && 'pl-6')}>
+                  <span className="flex-1">
                     <span className="font-semibold">Раздел {section.sectionNumber}:</span>{' '}
                     <span className="text-muted-foreground">{section.title}</span>
                   </span>
