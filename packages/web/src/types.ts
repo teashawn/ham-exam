@@ -15,6 +15,10 @@ export type {
   ExamSectionMetadata,
   ExamSession,
   SectionResult,
+  StoredStudyProgress,
+  StudyConfig,
+  StudyProgress,
+  StudySession,
   UserAnswer,
   UserProfile,
 } from '@ham-exam/exam-core';
@@ -22,4 +26,4 @@ export type {
 export { DEFAULT_EXAM_CONFIG } from '@ham-exam/exam-core';
 
 // Web-specific types
-export type AppView = 'login' | 'home' | 'config' | 'exam' | 'results' | 'history';
+export type AppView = 'login' | 'home' | 'config' | 'exam' | 'results' | 'history' | 'study-section-select' | 'study';

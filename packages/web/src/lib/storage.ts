@@ -3,7 +3,7 @@
  * with localStorage as the storage adapter.
  */
 
-import type { ExamConfig, ExamHistoryEntry, ExamResult, UserProfile } from '@ham-exam/exam-core';
+import type { ExamConfig, ExamHistoryEntry, ExamResult, StoredStudyProgress, UserProfile } from '@ham-exam/exam-core';
 import {
   saveUserProfile as coreSaveUserProfile,
   loadUserProfile as coreLoadUserProfile,
@@ -16,6 +16,9 @@ import {
   clearExamHistory as coreClearExamHistory,
   saveExamConfig as coreSaveExamConfig,
   loadExamConfig as coreLoadExamConfig,
+  saveStudyProgress as coreSaveStudyProgress,
+  loadStudyProgress as coreLoadStudyProgress,
+  clearStudyProgress as coreClearStudyProgress,
 } from '@ham-exam/exam-core';
 
 // Re-export functions that don't need storage adapter
@@ -66,4 +69,16 @@ export function saveExamConfig(config: ExamConfig): void {
 
 export function loadExamConfig(): ExamConfig | null {
   return coreLoadExamConfig(localStorage);
+}
+
+export function saveStudyProgress(userId: string, viewedQuestionIds: string[]): void {
+  coreSaveStudyProgress(localStorage, userId, viewedQuestionIds);
+}
+
+export function loadStudyProgress(userId: string): StoredStudyProgress | null {
+  return coreLoadStudyProgress(localStorage, userId);
+}
+
+export function clearStudyProgress(userId: string): void {
+  coreClearStudyProgress(localStorage, userId);
 }

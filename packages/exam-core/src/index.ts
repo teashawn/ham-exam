@@ -18,6 +18,10 @@ export type {
   ExamSectionMetadata,
   ExamSession,
   SectionResult,
+  StoredStudyProgress,
+  StudyConfig,
+  StudyProgress,
+  StudySession,
   UserAnswer,
   UserProfile,
 } from './types.js';
@@ -49,14 +53,29 @@ export {
   addToHistory,
   calculateHistoryStats,
   clearExamHistory,
+  clearStudyProgress,
   clearUserProfile,
   createUserProfile,
   getUserHistory,
   loadExamConfig,
   loadExamHistory,
+  loadStudyProgress,
   loadUserProfile,
   saveExamConfig,
   saveExamHistory,
+  saveStudyProgress,
   saveUserProfile,
   updateLastActive,
 } from './storage.js';
+
+// Study mode functions
+export {
+  createStudySession,
+  getStudyProgress,
+  getStudyQuestions,
+  getStudySectionQuestions,
+  getTotalStudyProgress,
+  loadViewedQuestions,
+  markQuestionViewed,
+  switchStudySection,
+} from './study.js';

@@ -6,7 +6,6 @@ import {
   getEffectiveTheme,
   applyTheme,
   initTheme,
-  type Theme,
 } from './theme';
 
 describe('theme utilities', () => {

@@ -3,14 +3,17 @@ import {
   addToHistory,
   calculateHistoryStats,
   clearExamHistory,
+  clearStudyProgress,
   clearUserProfile,
   createUserProfile,
   getUserHistory,
   loadExamConfig,
   loadExamHistory,
+  loadStudyProgress,
   loadUserProfile,
   saveExamConfig,
   saveExamHistory,
+  saveStudyProgress,
   saveUserProfile,
   updateLastActive,
 } from './storage.js';
@@ -381,5 +384,80 @@ describe('calculateHistoryStats', () => {
 
     expect(stats.passRate).toBe(0);
     expect(stats.passedExams).toBe(0);
+  });
+});
+
+describe('Study Progress Storage', () => {
+  let storage: MockStorage;
+
+  beforeEach(() => {
+    storage = new MockStorage();
+  });
+
+  describe('saveStudyProgress / loadStudyProgress', () => {
+    it('should save and load study progress', () => {
+      const viewedIds = ['s1-1', 's1-2', 's2-1'];
+      saveStudyProgress(storage, 'user-123', viewedIds);
+
+      const loaded = loadStudyProgress(storage, 'user-123');
+
+      expect(loaded).not.toBeNull();
+      expect(loaded!.viewedQuestionIds).toEqual(viewedIds);
+      expect(loaded!.lastActiveAt).toBeTruthy();
+    });
+
+    it('should return null for no progress', () => {
+      const loaded = loadStudyProgress(storage, 'user-123');
+      expect(loaded).toBeNull();
+    });
+
+    it('should return null for invalid data', () => {
+      storage.setItem('ham-exam:study-progress:user-123', 'invalid json');
+      const loaded = loadStudyProgress(storage, 'user-123');
+      expect(loaded).toBeNull();
+    });
+
+    it('should save progress per user', () => {
+      saveStudyProgress(storage, 'user-1', ['s1-1', 's1-2']);
+      saveStudyProgress(storage, 'user-2', ['s2-1']);
+
+      const user1Progress = loadStudyProgress(storage, 'user-1');
+      const user2Progress = loadStudyProgress(storage, 'user-2');
+
+      expect(user1Progress!.viewedQuestionIds).toEqual(['s1-1', 's1-2']);
+      expect(user2Progress!.viewedQuestionIds).toEqual(['s2-1']);
+    });
+
+    it('should include lastActiveAt timestamp', () => {
+      const before = new Date().toISOString();
+      saveStudyProgress(storage, 'user-123', ['s1-1']);
+      const after = new Date().toISOString();
+
+      const loaded = loadStudyProgress(storage, 'user-123');
+
+      expect(loaded!.lastActiveAt >= before).toBe(true);
+      expect(loaded!.lastActiveAt <= after).toBe(true);
+    });
+  });
+
+  describe('clearStudyProgress', () => {
+    it('should clear study progress for user', () => {
+      saveStudyProgress(storage, 'user-123', ['s1-1', 's1-2']);
+
+      clearStudyProgress(storage, 'user-123');
+
+      const loaded = loadStudyProgress(storage, 'user-123');
+      expect(loaded).toBeNull();
+    });
+
+    it('should not affect other users', () => {
+      saveStudyProgress(storage, 'user-1', ['s1-1']);
+      saveStudyProgress(storage, 'user-2', ['s2-1']);
+
+      clearStudyProgress(storage, 'user-1');
+
+      expect(loadStudyProgress(storage, 'user-1')).toBeNull();
+      expect(loadStudyProgress(storage, 'user-2')).not.toBeNull();
+    });
   });
 });

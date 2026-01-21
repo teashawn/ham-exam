@@ -7,6 +7,7 @@ import type {
   ExamConfig,
   ExamHistoryEntry,
   ExamResult,
+  StoredStudyProgress,
   UserProfile,
 } from './types.js';
 import { generateId } from './engine.js';
@@ -27,6 +28,7 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'ham-exam:user-profile',
   EXAM_HISTORY: 'ham-exam:exam-history',
   EXAM_CONFIG: 'ham-exam:exam-config',
+  STUDY_PROGRESS: 'ham-exam:study-progress',
 } as const;
 
 /**
@@ -232,4 +234,49 @@ export function calculateHistoryStats(history: ExamHistoryEntry[]): {
     bestScore,
     passRate: Math.round((passedExams / history.length) * 100),
   };
+}
+
+/**
+ * Save study progress
+ */
+export function saveStudyProgress(
+  storage: StorageAdapter,
+  userId: string,
+  viewedQuestionIds: string[]
+): void {
+  const progress: StoredStudyProgress = {
+    viewedQuestionIds,
+    lastActiveAt: new Date().toISOString(),
+  };
+  storage.setItem(
+    `${STORAGE_KEYS.STUDY_PROGRESS}:${userId}`,
+    JSON.stringify(progress)
+  );
+}
+
+/**
+ * Load study progress
+ */
+export function loadStudyProgress(
+  storage: StorageAdapter,
+  userId: string
+): StoredStudyProgress | null {
+  const data = storage.getItem(`${STORAGE_KEYS.STUDY_PROGRESS}:${userId}`);
+  if (!data) return null;
+
+  try {
+    return JSON.parse(data);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear study progress
+ */
+export function clearStudyProgress(
+  storage: StorageAdapter,
+  userId: string
+): void {
+  storage.removeItem(`${STORAGE_KEYS.STUDY_PROGRESS}:${userId}`);
 }

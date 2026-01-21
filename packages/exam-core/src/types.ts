@@ -152,3 +152,44 @@ export interface ExamHistoryEntry {
   completedAt: Date;
   config: ExamConfig;
 }
+
+/**
+ * Configuration for a study session
+ */
+export interface StudyConfig {
+  /** Section number to study (0 = all sections) */
+  sectionNumber: number;
+}
+
+/**
+ * State of an active study session
+ */
+export interface StudySession {
+  id: string;
+  userId: string;
+  config: StudyConfig;
+  questions: ExamQuestion[];
+  viewedQuestions: Set<string>;
+  currentSectionNumber: number;
+  startedAt: Date;
+  lastActiveAt: Date;
+}
+
+/**
+ * Progress information for a study section
+ */
+export interface StudyProgress {
+  sectionNumber: number;
+  sectionTitle: string;
+  totalQuestions: number;
+  viewedQuestions: number;
+  percentage: number;
+}
+
+/**
+ * Serializable study progress for storage
+ */
+export interface StoredStudyProgress {
+  viewedQuestionIds: string[];
+  lastActiveAt: string;
+}

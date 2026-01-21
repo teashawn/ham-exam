@@ -14,7 +14,7 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const [theme, setTheme] = useState<Theme>('system');
+  const [_theme, setTheme] = useState<Theme>('system');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

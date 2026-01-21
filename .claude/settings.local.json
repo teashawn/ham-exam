@@ -22,7 +22,14 @@
       "Bash(cd /Users/tisho/Desktop/Git\\\\ Repos/ham-exam && npm run test:coverage:*)",
       "Bash(npm run test:coverage:*)",
       "Bash(python3 -c \" import json import sys data = json.load\\(sys.stdin\\) for file_path, file_data in data.items\\(\\): if ''App.tsx'' in file_path: print\\(f''File: {file_path}''\\) print\\(''Function coverage:''\\) for fn_key, fn_data in file_data[''fnMap''].items\\(\\): hits = file_data[''f''][fn_key] print\\(f'' {fn_key}: {fn_data[\"\"name\"\"]} \\(line {fn_data[\"\"loc\"\"][\"\"start\"\"][\"\"line\"\"]}\\) - hits: {hits}''\\) \")",
-      "Bash(npm test -- --reporter=verbose)"
+      "Bash(npm test -- --reporter=verbose)",
+      "Bash(jq:*)",
+      "mcp__plugin_serena_serena__list_dir",
+      "Bash(npm run build:*)",
+      "Bash(npm run test:web)",
+      "Skill(frontend-design)",
+      "Bash(npm install:*)",
+      "Bash(cd /Users/tisho/Desktop/Git\\\\ Repos/ham-exam/packages/web && npx tsc:*)"
     ]
   }
 }

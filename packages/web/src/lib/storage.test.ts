@@ -13,6 +13,9 @@ import {
   saveExamConfig,
   loadExamConfig,
   calculateHistoryStats,
+  saveStudyProgress,
+  loadStudyProgress,
+  clearStudyProgress,
 } from './storage';
 import type { ExamConfig, ExamHistoryEntry, ExamResult, UserProfile } from '@ham-exam/exam-core';
 
@@ -229,6 +232,38 @@ describe('storage', () => {
       expect(stats.totalExams).toBe(2);
       expect(stats.passedExams).toBe(1);
       expect(stats.bestScore).toBe(80);
+    });
+  });
+
+  describe('Study Progress', () => {
+    it('should save study progress', () => {
+      saveStudyProgress('user-1', ['s1-1', 's1-2']);
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'ham-exam:study-progress:user-1',
+        expect.any(String)
+      );
+    });
+
+    it('should load study progress', () => {
+      const progress = {
+        viewedQuestionIds: ['s1-1', 's1-2'],
+        lastActiveAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:study-progress:user-1'] = JSON.stringify(progress);
+
+      const loaded = loadStudyProgress('user-1');
+      expect(loaded).not.toBeNull();
+      expect(loaded?.viewedQuestionIds).toEqual(['s1-1', 's1-2']);
+    });
+
+    it('should return null for missing progress', () => {
+      const loaded = loadStudyProgress('nonexistent');
+      expect(loaded).toBeNull();
+    });
+
+    it('should clear study progress', () => {
+      clearStudyProgress('user-1');
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith('ham-exam:study-progress:user-1');
     });
   });
 });
