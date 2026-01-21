@@ -214,6 +214,25 @@ describe('App', () => {
       // Verify config was saved to storage
       expect(localStorageMock.setItem).toHaveBeenCalled();
     });
+
+    it('should go back to home when clicking back button', async () => {
+      render(<App />);
+
+      const settingsButton = screen.getByRole('button', { name: 'Настройки' });
+      fireEvent.click(settingsButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
+      });
+
+      // Click the back button (chevron left)
+      const backButton = screen.getByRole('button', { name: '' });
+      fireEvent.click(backButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Нов изпит')).toBeInTheDocument();
+      });
+    });
   });
 
   describe('Exam View', () => {

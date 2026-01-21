@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(cd /Users/tisho/Desktop/Git\\\\ Repos/ham-exam && npm run build:packages:*)",
+      "Bash(timeout 10 npm run dev:*)",
+      "Bash(cd:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(git checkout -b feature/ui-improvements-dark-mode)",
+      "Bash(git add packages/web/src/App.tsx packages/web/src/components/ui/button.tsx packages/web/src/components/ui/card.tsx packages/web/src/components/ui/input.tsx packages/web/src/components/ui/progress.tsx packages/web/src/components/ui/slider.tsx packages/web/src/components/ui/theme-toggle.tsx packages/web/src/index.css packages/web/src/lib/theme.ts packages/web/src/test/setup.ts)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd dark mode support and UI improvements\n\n- Create theme system with localStorage persistence and system preference detection\n- Add theme toggle component with sun/moon icons\n- Implement dark theme CSS variables using OKLCH colors\n- Add subtle animations \\(fade-in, slide-up, scale-in\\) and transitions\n- Enhance UI components \\(button, card, input, progress, slider\\) with improved styling\n- Update all screens with better visual hierarchy, icons, and refined layouts\n- Add matchMedia mock to test setup for jsdom compatibility\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push -u origin feature/ui-improvements-dark-mode)",
+      "Bash(gh pr create --title \"Add dark mode support and UI improvements\" --body \"$\\(cat <<''EOF''\n## Summary\n- Implement dark mode with theme toggle, localStorage persistence, and system preference detection\n- Add subtle animations \\(fade-in, slide-up, scale-in\\) and transitions across all screens\n- Enhance UI components and all 6 screens with refined styling, better visual hierarchy, and icons\n\n## Changes\n\n### Theme System\n- `packages/web/src/lib/theme.ts` - Theme management utilities\n- `packages/web/src/components/ui/theme-toggle.tsx` - Toggle component with sun/moon icons\n- `packages/web/src/index.css` - Dark theme CSS variables \\(OKLCH\\), animations, utility classes\n\n### Enhanced Components\n- Button: Scale/shadow transitions, improved hover/active states\n- Card: Soft shadows, transition effects\n- Input: Enhanced focus ring with primary color glow\n- Progress: Gradient fill, smooth transitions\n- Slider: Hover scale effect, gradient track\n\n### Screen Improvements\n- Login: Large radio icon, card-based form, theme toggle\n- Home: Icons for sections, gradient stat boxes\n- Config: Back navigation, pill-styled question counts\n- Exam: Enhanced answer buttons, navigation icons\n- Results: Trophy icon, colored stat boxes, section progress bars\n- History: Trophy icons, improved card layout\n\n## Test plan\n- [x] All 95 existing tests pass\n- [x] Verified light mode on all screens\n- [x] Verified dark mode on all screens\n- [x] Theme toggle persists preference to localStorage\n- [x] Animations are smooth and subtle\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\nEOF\n\\)\")",
+      "Bash(done)",
+      "Bash(ls:*)",
+      "Bash(cd /Users/tisho/Desktop/Git\\\\ Repos/ham-exam && npm run test:coverage:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(python3 -c \" import json import sys data = json.load\\(sys.stdin\\) for file_path, file_data in data.items\\(\\): if ''App.tsx'' in file_path: print\\(f''File: {file_path}''\\) print\\(''Function coverage:''\\) for fn_key, fn_data in file_data[''fnMap''].items\\(\\): hits = file_data[''f''][fn_key] print\\(f'' {fn_key}: {fn_data[\"\"name\"\"]} \\(line {fn_data[\"\"loc\"\"][\"\"start\"\"][\"\"line\"\"]}\\) - hits: {hits}''\\) \")",
+      "Bash(npm test -- --reporter=verbose)"
+    ]
+  }
+}

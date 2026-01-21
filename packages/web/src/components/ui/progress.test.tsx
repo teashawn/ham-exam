@@ -33,4 +33,17 @@ describe('Progress', () => {
     render(<Progress value={100} data-testid="progress" />);
     expect(screen.getByTestId('progress')).toBeInTheDocument();
   });
+
+  it('should apply animated class when animated prop is true', () => {
+    const { container } = render(<Progress value={50} animated={true} />);
+    const indicator = container.querySelector('[class*="progress-animated"]');
+    expect(indicator).toBeInTheDocument();
+  });
+
+  it('should not apply animated class when animated prop is false', () => {
+    const { container } = render(<Progress value={50} animated={false} />);
+    const indicator = container.querySelector('[class*="bg-gradient"]');
+    expect(indicator).toBeInTheDocument();
+    expect(indicator).not.toHaveClass('progress-animated');
+  });
 });

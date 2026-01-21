@@ -3,6 +3,7 @@ export type Theme = 'light' | 'dark' | 'system';
 const STORAGE_KEY = 'ham-exam-theme';
 
 export function getStoredTheme(): Theme {
+  /* c8 ignore next */
   if (typeof window === 'undefined') return 'system';
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
@@ -16,6 +17,7 @@ export function setStoredTheme(theme: Theme): void {
 }
 
 export function getSystemTheme(): 'light' | 'dark' {
+  /* c8 ignore next */
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
