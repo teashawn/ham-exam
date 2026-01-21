@@ -20,6 +20,12 @@ export default defineConfig({
       exclude: [
         'src/main.tsx', // Entry point, not unit testable
       ],
+      thresholds: {
+        statements: 100,
+        branches: 80,
+        functions: 100,
+        lines: 100,
+      },
     },
   },
 })
