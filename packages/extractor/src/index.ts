@@ -22,6 +22,7 @@ export {
   isValidAnswerLetter,
   extractCorrectAnswer,
   removeAnswerFromQuestion,
+  normalizeExtractedText,
   parseMetadata,
   parseOptions,
   parseQuestionBlock,

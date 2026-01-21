@@ -6,6 +6,7 @@ describe('index exports', () => {
     expect(extractor.isValidAnswerLetter).toBeDefined();
     expect(extractor.extractCorrectAnswer).toBeDefined();
     expect(extractor.removeAnswerFromQuestion).toBeDefined();
+    expect(extractor.normalizeExtractedText).toBeDefined();
     expect(extractor.parseMetadata).toBeDefined();
     expect(extractor.parseOptions).toBeDefined();
     expect(extractor.parseQuestionBlock).toBeDefined();

@@ -3,6 +3,7 @@ import {
   isValidAnswerLetter,
   extractCorrectAnswer,
   removeAnswerFromQuestion,
+  normalizeExtractedText,
   parseMetadata,
   parseOptions,
   parseQuestionBlock,
@@ -11,6 +12,48 @@ import {
   parsePdfText,
   generateQuestionId,
 } from './parser.js';
+
+describe('normalizeExtractedText', () => {
+  it('should remove single newlines from PDF line wrapping', () => {
+    const text = 'This is a sentence that\ncontinues on the next line.';
+    expect(normalizeExtractedText(text)).toBe('This is a sentence that continues on the next line.');
+  });
+
+  it('should preserve paragraph breaks (double newlines)', () => {
+    const text = 'First paragraph.\n\nSecond paragraph.';
+    expect(normalizeExtractedText(text)).toBe('First paragraph.\n\nSecond paragraph.');
+  });
+
+  it('should collapse multiple spaces into single spaces', () => {
+    const text = 'This  has   multiple    spaces.';
+    expect(normalizeExtractedText(text)).toBe('This has multiple spaces.');
+  });
+
+  it('should handle combined PDF artifacts', () => {
+    const text = 'Как  се  нарича  енергията,  която  се  съхранява  в  електромагнитно  или \nелектростатично поле?';
+    expect(normalizeExtractedText(text)).toBe('Как се нарича енергията, която се съхранява в електромагнитно или електростатично поле?');
+  });
+
+  it('should preserve paragraph breaks with whitespace around them', () => {
+    const text = 'First paragraph.  \n\n  Second paragraph.';
+    expect(normalizeExtractedText(text)).toBe('First paragraph.\n\nSecond paragraph.');
+  });
+
+  it('should handle text with no newlines or extra spaces', () => {
+    const text = 'Normal text without issues.';
+    expect(normalizeExtractedText(text)).toBe('Normal text without issues.');
+  });
+
+  it('should trim leading and trailing whitespace', () => {
+    const text = '  Text with surrounding whitespace  ';
+    expect(normalizeExtractedText(text)).toBe('Text with surrounding whitespace');
+  });
+
+  it('should handle multiple single newlines', () => {
+    const text = 'Line one\nline two\nline three';
+    expect(normalizeExtractedText(text)).toBe('Line one line two line three');
+  });
+});
 
 describe('isValidAnswerLetter', () => {
   it('should return true for valid Bulgarian answer letters', () => {

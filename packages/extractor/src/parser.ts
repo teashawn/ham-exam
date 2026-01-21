@@ -9,6 +9,32 @@ import type {
 const ANSWER_LETTERS: AnswerLetter[] = ['А', 'Б', 'В', 'Г'];
 
 /**
+ * Normalize text extracted from PDF by removing rendering artifacts.
+ * - Removes newlines that are due to PDF line wrapping (not intentional breaks)
+ * - Collapses multiple spaces into single spaces
+ * - Preserves paragraph breaks (double newlines)
+ */
+export function normalizeExtractedText(text: string): string {
+  // Step 1: Preserve intentional paragraph breaks by marking them
+  let normalized = text.replace(/\n\s*\n/g, '<<PARAGRAPH>>');
+
+  // Step 2: Replace single newlines with spaces
+  // PDF line breaks within sentences should become spaces
+  normalized = normalized.replace(/\n/g, ' ');
+
+  // Step 3: Restore paragraph breaks
+  normalized = normalized.replace(/<<PARAGRAPH>>/g, '\n\n');
+
+  // Step 4: Collapse multiple spaces into single spaces
+  normalized = normalized.replace(/  +/g, ' ');
+
+  // Step 5: Clean up spaces around paragraph breaks
+  normalized = normalized.replace(/ *\n\n */g, '\n\n');
+
+  return normalized.trim();
+}
+
+/**
  * Check if a character is a valid Bulgarian answer letter
  */
 export function isValidAnswerLetter(char: string): char is AnswerLetter {
@@ -151,6 +177,9 @@ export function parseOptions(text: string): AnswerOption[] {
     // Clean up the option text - remove trailing semicolons and periods
     optionText = optionText.replace(/[;.]\s*$/, '').trim();
 
+    // Normalize PDF artifacts (newlines and multiple spaces)
+    optionText = normalizeExtractedText(optionText);
+
     if (optionText) {
       options.push({
         letter: letterPositions[i].letter,
@@ -176,8 +205,8 @@ export function parseQuestionBlock(
     return null;
   }
 
-  // Clean question text
-  const cleanQuestion = removeAnswerFromQuestion(questionText);
+  // Clean question text and normalize PDF artifacts
+  const cleanQuestion = normalizeExtractedText(removeAnswerFromQuestion(questionText));
 
   // Parse options
   const options = parseOptions(optionsText);
