@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+# @ham-exam/web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React-based web application for practicing Bulgarian HAM Radio License Exam questions.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- User profile management with persistent storage
+- Configurable exam sessions (customize questions per section)
+- Interactive exam interface with progress tracking
+- Detailed results with section-by-section breakdown
+- Exam history tracking with statistics
+- Responsive design using Tailwind CSS and shadcn/ui components
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Install dependencies (from the monorepo root):
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Start the development server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev --workspace=packages/web
+# or from the root:
+npm run dev
 ```
+
+Build for production:
+
+```bash
+npm run build --workspace=packages/web
+# or from the root:
+npm run build
+```
+
+## Testing
+
+Run tests:
+
+```bash
+npm test --workspace=packages/web
+# or from the root:
+npm run test:web
+```
+
+Run tests with coverage:
+
+```bash
+npm run test:coverage --workspace=packages/web
+```
+
+## Architecture
+
+This application uses:
+
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS v4** - Utility-first CSS
+- **shadcn/ui** - UI component library
+- **@ham-exam/exam-core** - Core exam engine (shared library)
+- **Vitest** - Testing framework
+- **Testing Library** - React component testing
+
+## Structure
+
+```
+src/
+├── components/       # UI components (shadcn/ui)
+│   └── ui/
+├── data/             # Exam questions JSON
+├── lib/              # Utility functions
+├── test/             # Test setup
+├── App.tsx           # Main application component
+├── types.ts          # TypeScript type definitions
+├── main.tsx          # Application entry point
+└── index.css         # Global styles
+```
+
+## Dependencies
+
+The web package depends on:
+
+- `@ham-exam/exam-core` - Core exam engine (workspace dependency)
+- React and related libraries
+- Radix UI primitives for accessible components
+- Lucide React for icons
+
+See `package.json` for the complete list of dependencies.

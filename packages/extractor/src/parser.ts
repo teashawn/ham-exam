@@ -119,7 +119,7 @@ export function parseMetadata(
 
 /**
  * Normalize Latin letters that look like Cyrillic to actual Cyrillic
- * A (Latin) -> А (Cyrillic), B (Latin) -> Б (Cyrillic for option B position)
+ * A (Latin) -> А (Cyrillic), B (Latin) -> В (Cyrillic, visual match)
  */
 function normalizeAnswerLetter(letter: string, position: number): AnswerLetter | null {
   // Direct Cyrillic letters
@@ -130,10 +130,9 @@ function normalizeAnswerLetter(letter: string, position: number): AnswerLetter |
   if (letter === 'A' && position === 0) {
     return 'А';
   }
-  // Latin B -> Cyrillic Б (only if it's the second option position)
-  // Note: Latin B looks like Cyrillic В visually, but in option context it's usually meant to be Б
+  // Latin B always maps to Cyrillic В (visual match)
   if (letter === 'B') {
-    return 'В'; // Latin B visually matches В
+    return 'В';
   }
   return null;
 }

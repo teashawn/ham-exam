@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import type {
-  AppView,
   ExamConfig,
   ExamData,
   ExamResult,
   ExamSession,
   UserProfile,
   AnswerLetter,
-} from './types';
-import { DEFAULT_EXAM_CONFIG } from './types';
-import { createExamSession, recordAnswer, completeExam, getExamProgress } from './lib/exam-engine';
+} from '@ham-exam/exam-core';
+import { DEFAULT_EXAM_CONFIG } from '@ham-exam/exam-core';
 import {
+  createExamSession,
+  recordAnswer,
+  completeExam,
+  getExamProgress,
   loadUserProfile,
   saveUserProfile,
   createUserProfile,
@@ -21,7 +23,8 @@ import {
   addToHistory,
   calculateHistoryStats,
   clearExamHistory,
-} from './lib/storage';
+} from '@ham-exam/exam-core';
+import type { AppView } from './types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,12 +88,13 @@ function App() {
   }, [config]);
 
   const handleStartExam = useCallback(() => {
-    const newSession = createExamSession(examData, config);
+    if (!user) return;
+    const newSession = createExamSession(examData, config, user.id);
     setSession(newSession);
     setCurrentQuestionIndex(0);
     setResult(null);
     setView('exam');
-  }, [config]);
+  }, [config, user]);
 
   const handleSelectAnswer = useCallback((answer: AnswerLetter) => {
     if (!session) return;
