@@ -36,7 +36,8 @@
       "Bash(node -e \"const data = require\\(''./packages/web/src/data/exam-questions.json''\\); data.sections.forEach\\(s => console.log\\(''Section'', s.metadata.sectionNumber, '':'', s.questions.length, ''questions''\\)\\);\")",
       "Bash(npm test:*)",
       "Bash(npm run build:packages:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(cd /Users/tisho/Desktop/Git\\\\ Repos/ham-exam && git config:*)"
     ]
   }
 }
