@@ -12,15 +12,35 @@ This monorepo contains three packages that work together to provide a complete e
 
 ## Features
 
-- Extract and parse Bulgarian HAM exam questions (Cyrillic alphabet)
-- Handle edge cases: Latin/Cyrillic letter mixing, trailing periods, PDF rendering artifacts
+### Exam Practice
 - 374 questions across 3 exam sections:
   - Section 1: 226 questions (Electrical Engineering and Radio Engineering)
   - Section 2: 92 questions (Codes and Amateur Radio Abbreviations, Rules and Procedures)
   - Section 3: 56 questions (Regulatory Framework)
 - Configurable exam sessions with customizable questions per section
+- Real-time progress tracking and detailed results with section breakdowns
+- 75% passing threshold matching official exam requirements
+
+### Study Mode
+- Interactive review of all questions with correct answers displayed
+- Visual question grid showing viewed/unviewed/current question status
+- Progress tracking with milestone celebrations (25%, 50%, 75%, 100%)
+- Persistent study progress saved automatically
+- Keyboard navigation:
+  - Arrow keys (← →) to navigate between questions
+  - Number keys (1-3) to switch sections
+  - 'G' to toggle grid view
+  - 'Esc' to exit study mode
+
+### User Experience
 - User profile management and exam history tracking
+- Statistics dashboard with pass rate, average score, and best score
+- Dark/light theme with persistent preference
 - Modern, responsive UI built with React, TypeScript, Tailwind CSS, and shadcn/ui
+
+### Data Extraction
+- Extract and parse Bulgarian HAM exam questions (Cyrillic alphabet)
+- Handle edge cases: Latin/Cyrillic letter mixing, trailing periods, PDF rendering artifacts
 - Comprehensive test coverage across all packages
 
 ## Project Structure
@@ -139,27 +159,30 @@ PDF extraction module that parses Bulgarian HAM exam PDFs and outputs structured
 
 ### @ham-exam/exam-core
 
-Platform-agnostic exam engine providing core functionality for exam sessions.
+Platform-agnostic exam engine providing core functionality for exam and study sessions.
 
 **Key features:**
 - Exam session creation and management
+- Study session creation with progress tracking
 - Random question selection with configurable counts per section
 - Answer recording and validation
-- Score calculation and passing criteria
+- Score calculation and passing criteria (75% to pass)
 - User profile management
 - Exam history tracking with statistics
 - LocalStorage-based persistence (with adapter pattern for other storage backends)
 
 ### @ham-exam/web
 
-React-based web application for taking practice exams.
+React-based web application for taking practice exams and studying.
 
 **Key features:**
 - User authentication and profile management
 - Configurable exam sessions (questions per section, shuffle options)
 - Interactive exam interface with progress tracking
+- Study mode with question grid and keyboard navigation
 - Detailed results with section breakdowns
 - Exam history with statistics
+- Dark/light theme toggle with persistent preference
 - Responsive design using Tailwind CSS and shadcn/ui components
 
 ## Architecture
@@ -225,4 +248,4 @@ MIT
 ## Acknowledgments
 
 - Official exam materials provided by Bulgarian Communications Regulation Commission
-- Built with React, TypeScript, Vite, Tailwind CSS, and shadcn/ui
+- Built with React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI, and Lucide icons
