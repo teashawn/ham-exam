@@ -7,7 +7,6 @@ import type { ExamConfig, ExamHistoryEntry, ExamResult, UserProfile } from '@ham
 import {
   saveUserProfile as coreSaveUserProfile,
   loadUserProfile as coreLoadUserProfile,
-  createUserProfile as coreCreateUserProfile,
   updateLastActive as coreUpdateLastActive,
   clearUserProfile as coreClearUserProfile,
   saveExamHistory as coreSaveExamHistory,
@@ -17,7 +16,6 @@ import {
   clearExamHistory as coreClearExamHistory,
   saveExamConfig as coreSaveExamConfig,
   loadExamConfig as coreLoadExamConfig,
-  calculateHistoryStats,
 } from '@ham-exam/exam-core';
 
 // Re-export functions that don't need storage adapter
