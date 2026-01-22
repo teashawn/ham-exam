@@ -35,6 +35,30 @@ const clickCard = (cardText: string) => {
   }
 };
 
+// Helper to navigate to sections study mode (through mode selection)
+const goToSectionsMode = async () => {
+  clickCard('Учене');
+  await waitFor(() => {
+    expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByTestId('sections-mode-card'));
+  await waitFor(() => {
+    expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+  });
+};
+
+// Helper to navigate to FSRS study mode (through mode selection)
+const goToFSRSMode = async () => {
+  clickCard('Учене');
+  await waitFor(() => {
+    expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
+  });
+  fireEvent.click(screen.getByTestId('fsrs-mode-card'));
+  await waitFor(() => {
+    expect(screen.getByText('За преговор')).toBeInTheDocument();
+  });
+};
+
 describe('App', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -153,7 +177,7 @@ describe('App', () => {
       clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
       });
     });
 
@@ -1016,17 +1040,16 @@ describe('App', () => {
       clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 2')).toBeInTheDocument();
-        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
+        expect(screen.getByText('Интелигентен преговор')).toBeInTheDocument();
+        expect(screen.getByText('По раздели')).toBeInTheDocument();
       });
     });
 
     it('should show progress for each section', async () => {
       render(<App />);
 
-      clickCard('Учене');
+      await goToSectionsMode();
 
       await waitFor(() => {
         // Check for progress indicators (0/X format)
@@ -1040,7 +1063,7 @@ describe('App', () => {
       clickCard('Учене');
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole('button', { name: 'Назад' }));
@@ -1053,11 +1076,7 @@ describe('App', () => {
     it('should show remaining questions count on section cards', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // When there's no progress, all sections show 0% and remaining questions
       await waitFor(() => {
@@ -1068,11 +1087,7 @@ describe('App', () => {
     it('should show progress percentage on section cards', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // All sections should show percentage
       await waitFor(() => {
@@ -1083,7 +1098,7 @@ describe('App', () => {
     it('should show FSRS stats on study home', async () => {
       render(<App />);
 
-      clickCard('Учене');
+      await goToFSRSMode();
 
       await waitFor(() => {
         expect(screen.getByText('Нови')).toBeInTheDocument();
@@ -1105,12 +1120,7 @@ describe('App', () => {
     it('should show FSRS study button when due cards exist', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      // Initialize some cards by viewing a section
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // Go to section to create some cards
       clickCard('Раздел 1');
@@ -1123,18 +1133,14 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Изход' }));
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
       });
     });
 
     it('should start FSRS study mode and show question with hidden answer', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // First create some cards by entering study mode
       clickCard('Раздел 1');
@@ -1150,6 +1156,7 @@ describe('App', () => {
       clickCard('Учене');
 
       await waitFor(() => {
+        expect(screen.getByText('Режим учене')).toBeInTheDocument();
         expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
       });
     });
@@ -1168,11 +1175,7 @@ describe('App', () => {
     it('should start studying a section when clicking on it', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // Click on section 1 card
       const section1Card = screen.getByText('Раздел 1').closest('[class*="cursor-pointer"]');
@@ -1189,11 +1192,7 @@ describe('App', () => {
     it('should navigate to next question in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1212,11 +1211,7 @@ describe('App', () => {
     it('should navigate to previous question in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1244,11 +1239,7 @@ describe('App', () => {
     it('should disable prev button on first question in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1263,11 +1254,7 @@ describe('App', () => {
     it('should switch sections in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1287,11 +1274,7 @@ describe('App', () => {
     it('should exit study mode and return to study home', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1304,18 +1287,14 @@ describe('App', () => {
       fireEvent.click(backButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
       });
     });
 
     it('should open question grid modal when clicking question counter', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1336,11 +1315,7 @@ describe('App', () => {
     it('should close question grid modal when clicking close button', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1368,11 +1343,7 @@ describe('App', () => {
     it('should jump to specific question when clicking in grid', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1404,11 +1375,7 @@ describe('App', () => {
     it('should jump to question when clicking on question dot indicator', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1429,11 +1396,7 @@ describe('App', () => {
     it('should close question grid modal when clicking X button', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1464,11 +1427,7 @@ describe('App', () => {
     it('should save progress when viewing questions', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1483,11 +1442,7 @@ describe('App', () => {
     it('should clear study progress when reset button is clicked', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // Start studying to create some progress
       clickCard('Раздел 1');
@@ -1504,9 +1459,16 @@ describe('App', () => {
         expect(screen.getByText('Въпрос 2')).toBeInTheDocument();
       });
 
-      // Go back to section select (progress should be saved)
+      // Go back to study home (mode selection)
       const backButton = screen.getByRole('button', { name: 'Изход' });
       fireEvent.click(backButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
+      });
+
+      // Navigate to sections mode to see the reset button
+      fireEvent.click(screen.getByTestId('sections-mode-card'));
 
       await waitFor(() => {
         expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
@@ -1530,11 +1492,7 @@ describe('App', () => {
     it('should show viewed and unviewed counts in question grid', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1565,11 +1523,7 @@ describe('App', () => {
     it('should navigate with keyboard arrow keys in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1595,11 +1549,7 @@ describe('App', () => {
     it('should open question grid with G key in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1618,11 +1568,7 @@ describe('App', () => {
     it('should exit study mode with Escape key', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1634,18 +1580,14 @@ describe('App', () => {
       fireEvent.keyDown(window, { key: 'Escape' });
 
       await waitFor(() => {
-        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
       });
     });
 
     it('should switch sections with number keys in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1665,11 +1607,7 @@ describe('App', () => {
     it('should navigate with P and N keys in study mode', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1698,11 +1636,7 @@ describe('App', () => {
 
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1721,11 +1655,7 @@ describe('App', () => {
     it('should open question grid with lowercase g key', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1744,11 +1674,7 @@ describe('App', () => {
     it('should switch to section 1 with number key 1', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 2')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // Start with section 2
       clickCard('Раздел 2');
@@ -1768,11 +1694,7 @@ describe('App', () => {
     it('should switch to section 3 with number key 3', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1791,11 +1713,7 @@ describe('App', () => {
     it('should navigate with uppercase P key', async () => {
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 1')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       clickCard('Раздел 1');
 
@@ -1823,11 +1741,7 @@ describe('App', () => {
 
       render(<App />);
 
-      clickCard('Учене');
-
-      await waitFor(() => {
-        expect(screen.getByText('Раздел 3')).toBeInTheDocument();
-      });
+      await goToSectionsMode();
 
       // Use section 3 which has 56 questions - 25% = 14 questions
       clickCard('Раздел 3');
