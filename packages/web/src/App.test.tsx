@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import 'fake-indexeddb/auto';
 import App from './App';
-import { resetDatabase } from '@/lib/db';
+import { deleteDatabase } from '@/lib/db';
 
 // Mock localStorage
 const mockStorage: Record<string, string> = {};
@@ -36,21 +36,22 @@ const clickCard = (cardText: string) => {
 };
 
 describe('App', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
-    resetDatabase();
+    // Use async deleteDatabase to ensure clean state
+    await deleteDatabase();
   });
 
   afterEach(async () => {
     // Cleanup React components first to stop useLiveQuery subscriptions
     cleanup();
-    // Wait for async operations to settle before resetting database
+    // Wait for async operations to settle before deleting database
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 10));
+      await new Promise((r) => setTimeout(r, 50));
     });
-    // Reset database after React cleanup to avoid DatabaseClosedError
-    resetDatabase();
+    // Delete database after React cleanup to avoid DatabaseClosedError
+    await deleteDatabase();
   });
 
   describe('Login View', () => {
