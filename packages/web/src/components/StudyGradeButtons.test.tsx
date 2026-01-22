@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
@@ -117,8 +117,7 @@ describe('StudyGradeButtons', () => {
     expect(mockOnRate).not.toHaveBeenCalled();
   });
 
-  it('should disable buttons when disabled prop is true', async () => {
-    const user = userEvent.setup();
+  it('should disable buttons when disabled prop is true', () => {
     render(
       <StudyGradeButtons preview={mockPreview} onRate={mockOnRate} disabled />
     );

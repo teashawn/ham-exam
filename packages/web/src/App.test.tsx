@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import 'fake-indexeddb/auto';
 import App from './App';
-import { deleteDatabase, resetDatabase } from '@/lib/db';
+import { resetDatabase } from '@/lib/db';
 
 // Mock localStorage
 const mockStorage: Record<string, string> = {};

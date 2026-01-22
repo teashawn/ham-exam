@@ -133,7 +133,7 @@ describe('FSRS Database', () => {
 
     it('should return only due cards', async () => {
       // Create some cards
-      const card1 = await getOrCreateCard(db, 'profile1', 'q1', now);
+      await getOrCreateCard(db, 'profile1', 'q1', now);
       const card2 = await getOrCreateCard(db, 'profile1', 'q2', now);
 
       // Make card2 due in the future

@@ -17,7 +17,6 @@ import type {
 import {
   CardState,
   calculateReview,
-  createNewCard,
   createReviewLog,
   examResultToRating,
   getSchedulingPreview as getSchedulingPreviewFn,
@@ -30,7 +29,6 @@ import {
   updateCard,
   addReviewLog,
   getCardsForProfile,
-  getDueCardsForProfile,
   getFSRSConfig,
   saveFSRSConfig,
   migrateFromLocalStorage,

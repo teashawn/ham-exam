@@ -22,7 +22,6 @@ import {
   getStudyProgress,
   getStudySectionQuestions,
   loadViewedQuestions,
-  createExamPrepConfig,
 } from '@ham-exam/exam-core';
 import {
   loadUserProfile,
@@ -907,14 +906,6 @@ function App() {
       const fsrsQuestion = currentDueCard
         ? allQuestions.find(q => q.id === currentDueCard.questionId)
         : null;
-
-      // Load schedule preview when card changes
-      const loadPreview = async () => {
-        if (currentDueCard && answerRevealed) {
-          const preview = await srs.getSchedulePreview(currentDueCard.questionId);
-          setSchedulePreview(preview);
-        }
-      };
 
       // Handle grading
       const handleGrade = async (rating: FSRSRating) => {

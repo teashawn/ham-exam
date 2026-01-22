@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import 'fake-indexeddb/auto';
 import { useSRS, calculateStats } from './useSRS';
 import { FSRSRating, CardState, DEFAULT_FSRS_CONFIG } from '@ham-exam/exam-core';
-import type { ExamQuestion, FSRSConfig, FSRSCard } from '@ham-exam/exam-core';
+import type { ExamQuestion, FSRSCard } from '@ham-exam/exam-core';
 import { deleteDatabase, resetDatabase } from '@/lib/db';
 
 // Mock questions for testing
@@ -244,16 +244,16 @@ describe('useSRS', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    let preview: ReturnType<typeof result.current.getSchedulePreview> | undefined;
+    let preview: Awaited<ReturnType<typeof result.current.getSchedulePreview>> | undefined;
     await act(async () => {
       preview = await result.current.getSchedulePreview('q1');
     });
 
     expect(preview).not.toBeNull();
-    expect((await preview)![FSRSRating.Again]).toBeDefined();
-    expect((await preview)![FSRSRating.Hard]).toBeDefined();
-    expect((await preview)![FSRSRating.Good]).toBeDefined();
-    expect((await preview)![FSRSRating.Easy]).toBeDefined();
+    expect(preview![FSRSRating.Again]).toBeDefined();
+    expect(preview![FSRSRating.Hard]).toBeDefined();
+    expect(preview![FSRSRating.Good]).toBeDefined();
+    expect(preview![FSRSRating.Easy]).toBeDefined();
   });
 
   it('should update config', async () => {
