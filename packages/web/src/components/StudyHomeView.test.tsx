@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StudyHomeView } from './StudyHomeView';
 import type { ExamSection, StudyProgress } from '@/types';
+import type { FSRSStats } from '@ham-exam/exam-core';
 
 const mockSections: ExamSection[] = [
   {
@@ -334,5 +335,166 @@ describe('StudyHomeView', () => {
     // Sections 2 and 3 should fall back to default values (0 viewed, questions.length for total)
     expect(screen.getByText('0/50')).toBeInTheDocument();
     expect(screen.getByText('0/30')).toBeInTheDocument();
+  });
+
+  // FSRS-related tests
+  describe('FSRS features', () => {
+    const mockFSRSStats: FSRSStats = {
+      totalCards: 180,
+      newCards: 100,
+      learningCards: 30,
+      reviewCards: 40,
+      relearningCards: 10,
+      dueNow: 25,
+    };
+
+    it('should show FSRS stats when fsrsStats prop is provided', () => {
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          fsrsStats={mockFSRSStats}
+        />
+      );
+
+      expect(screen.getByText('25')).toBeInTheDocument(); // dueNow
+      expect(screen.getByText('За преговор')).toBeInTheDocument();
+      expect(screen.getByText('100')).toBeInTheDocument(); // newCards
+      expect(screen.getByText('Нови')).toBeInTheDocument();
+      expect(screen.getByText('30')).toBeInTheDocument(); // learningCards
+      expect(screen.getByText('Учене')).toBeInTheDocument();
+      expect(screen.getByText('40')).toBeInTheDocument(); // reviewCards
+      expect(screen.getByText('Преговор')).toBeInTheDocument();
+    });
+
+    it('should hide legacy overall progress when FSRS stats are shown', () => {
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressWithProgress}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          fsrsStats={mockFSRSStats}
+        />
+      );
+
+      expect(screen.queryByText('Общ прогрес')).not.toBeInTheDocument();
+    });
+
+    it('should show exam countdown when examDate is provided', () => {
+      // Set exam date 5 days in the future
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 5);
+
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          examDate={futureDate.toISOString()}
+        />
+      );
+
+      expect(screen.getByText('5 дни до изпита')).toBeInTheDocument();
+    });
+
+    it('should show "1 day until exam" for singular day', () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          examDate={tomorrow.toISOString()}
+        />
+      );
+
+      expect(screen.getByText('1 ден до изпита')).toBeInTheDocument();
+    });
+
+    it('should show "Exam is today!" when exam is today', () => {
+      const today = new Date();
+
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          examDate={today.toISOString()}
+        />
+      );
+
+      expect(screen.getByText('Изпитът е днес!')).toBeInTheDocument();
+    });
+
+    it('should show start FSRS study button when due cards exist', () => {
+      const onStartFSRSStudy = vi.fn();
+
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          fsrsStats={mockFSRSStats}
+          onStartFSRSStudy={onStartFSRSStudy}
+        />
+      );
+
+      const button = screen.getByRole('button', { name: /Преговори 25 карти/i });
+      expect(button).toBeInTheDocument();
+
+      fireEvent.click(button);
+      expect(onStartFSRSStudy).toHaveBeenCalled();
+    });
+
+    it('should not show start FSRS study button when no due cards', () => {
+      const statsNoDue: FSRSStats = {
+        ...mockFSRSStats,
+        dueNow: 0,
+      };
+
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          fsrsStats={statsNoDue}
+          onStartFSRSStudy={vi.fn()}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /Преговори/i })).not.toBeInTheDocument();
+    });
+
+    it('should not show start FSRS study button when onStartFSRSStudy is not provided', () => {
+      render(
+        <StudyHomeView
+          studyProgress={mockProgressEmpty}
+          sections={mockSections}
+          onStartStudy={vi.fn()}
+          onResetProgress={vi.fn()}
+          onBack={vi.fn()}
+          fsrsStats={mockFSRSStats}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /Преговори/i })).not.toBeInTheDocument();
+    });
   });
 });

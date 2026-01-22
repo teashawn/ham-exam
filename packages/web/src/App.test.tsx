@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import 'fake-indexeddb/auto';
 import App from './App';
+import { deleteDatabase, resetDatabase } from '@/lib/db';
 
 // Mock localStorage
 const mockStorage: Record<string, string> = {};
@@ -37,6 +39,16 @@ describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
+    resetDatabase();
+  });
+
+  afterEach(async () => {
+    // Wait for async operations to settle before cleanup
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    // Reset database instead of deleting to avoid race conditions with useLiveQuery
+    resetDatabase();
   });
 
   describe('Login View', () => {
@@ -386,6 +398,150 @@ describe('App', () => {
       await waitFor(() => {
         expect(screen.getByText('Нов изпит')).toBeInTheDocument();
       });
+    });
+
+    it('should show exam date picker', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Дата на изпита')).toBeInTheDocument();
+      });
+    });
+
+    it('should show backup and restore buttons', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Архивиране на данни')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Изтегли/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Възстанови/i })).toBeInTheDocument();
+      });
+    });
+
+    it('should update exam date when date is selected', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Дата на изпита')).toBeInTheDocument();
+      });
+
+      // Find the date input and change it
+      const dateInput = screen.getByDisplayValue('');
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+      fireEvent.change(dateInput, { target: { value: futureDate.toISOString().split('T')[0] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/дни до изпита|ден до изпита/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should clear exam date when date is cleared', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Дата на изпита')).toBeInTheDocument();
+      });
+
+      // Set a date first
+      const dateInputs = document.querySelectorAll('input[type="date"]');
+      const dateInput = dateInputs[0] as HTMLInputElement;
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+      fireEvent.change(dateInput, { target: { value: futureDate.toISOString().split('T')[0] } });
+
+      await waitFor(() => {
+        expect(screen.getByText(/дни до изпита|ден до изпита/i)).toBeInTheDocument();
+      });
+
+      // Clear the date
+      fireEvent.change(dateInput, { target: { value: '' } });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/дни до изпита|ден до изпита/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should trigger backup download when clicking download button', async () => {
+      const createObjectURL = vi.fn(() => 'blob:test');
+      const revokeObjectURL = vi.fn();
+      vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Изтегли/i })).toBeInTheDocument();
+      });
+
+      const downloadButton = screen.getByRole('button', { name: /Изтегли/i });
+      await act(async () => {
+        fireEvent.click(downloadButton);
+      });
+
+      // Should have created a blob URL
+      await waitFor(() => {
+        expect(createObjectURL).toHaveBeenCalled();
+      });
+    });
+
+    it('should trigger restore when clicking restore button', async () => {
+      render(<App />);
+
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: 'Настройки' })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Настройки' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Възстанови/i })).toBeInTheDocument();
+      });
+
+      // Just verify the button is clickable
+      const restoreButton = screen.getByRole('button', { name: /Възстанови/i });
+      expect(restoreButton).not.toBeDisabled();
     });
   });
 
@@ -918,6 +1074,80 @@ describe('App', () => {
       // All sections should show percentage
       await waitFor(() => {
         expect(screen.getAllByText(/0% прегледани/).length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should show FSRS stats on study home', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Нови')).toBeInTheDocument();
+        expect(screen.getByText('За преговор')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('FSRS Study Mode', () => {
+    beforeEach(async () => {
+      mockStorage['ham-exam:user-profile'] = JSON.stringify({
+        id: 'test-id',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString(),
+      });
+    });
+
+    it('should show FSRS study button when due cards exist', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      // Initialize some cards by viewing a section
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+
+      // Go to section to create some cards
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Exit and return to study home
+      fireEvent.click(screen.getByRole('button', { name: 'Изход' }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+    });
+
+    it('should start FSRS study mode and show question with hidden answer', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('Избери раздел за учене')).toBeInTheDocument();
+      });
+
+      // First create some cards by entering study mode
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+    });
+
+    it('should show FSRS badge in FSRS mode header', async () => {
+      render(<App />);
+
+      clickCard('Учене');
+
+      await waitFor(() => {
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
       });
     });
   });

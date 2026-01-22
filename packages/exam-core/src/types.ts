@@ -193,3 +193,129 @@ export interface StoredStudyProgress {
   viewedQuestionIds: string[];
   lastActiveAt: string;
 }
+
+// ============================================================================
+// FSRS (Free Spaced Repetition Scheduler) Types
+// ============================================================================
+
+/**
+ * State of a flashcard in the FSRS system
+ */
+export enum CardState {
+  New = 0,
+  Learning = 1,
+  Review = 2,
+  Relearning = 3,
+}
+
+/**
+ * Rating for how well the user knew an answer
+ */
+export enum FSRSRating {
+  Again = 1,
+  Hard = 2,
+  Good = 3,
+  Easy = 4,
+}
+
+/**
+ * FSRS card representing a question's learning state
+ */
+export interface FSRSCard {
+  /** Composite key: ${profileId}_${questionId} */
+  id: string;
+  /** User profile ID */
+  profileId: string;
+  /** Question ID */
+  questionId: string;
+  /** Current card state */
+  state: CardState;
+  /** Next review due date (ISO string) */
+  due: string;
+  /** Memory stability (days) */
+  stability: number;
+  /** Card difficulty (0-10 scale) */
+  difficulty: number;
+  /** Days since last review */
+  elapsedDays: number;
+  /** Days until next scheduled review */
+  scheduledDays: number;
+  /** Number of successful reviews */
+  reps: number;
+  /** Number of times forgotten (rated Again) */
+  lapses: number;
+  /** Last review date (ISO string, null if never reviewed) */
+  lastReview: string | null;
+}
+
+/**
+ * Log entry for a single review event
+ */
+export interface FSRSReviewLog {
+  /** Unique ID */
+  id: string;
+  /** User profile ID */
+  profileId: string;
+  /** Question ID */
+  questionId: string;
+  /** Rating given */
+  rating: FSRSRating;
+  /** When the review occurred (ISO string) */
+  reviewedAt: string;
+  /** Source of the review */
+  source: 'study' | 'exam';
+}
+
+/**
+ * FSRS configuration optimized for exam prep
+ */
+export interface FSRSConfig {
+  /** Target retention rate (0-1). Higher = more frequent reviews. Default 0.95 for exam prep */
+  requestRetention: number;
+  /** Maximum interval in days. Capped at days until exam */
+  maximumInterval: number;
+  /** Whether to add randomness to intervals. False for exam prep */
+  enableFuzz: boolean;
+  /** Enable short-term learning steps (intra-day) */
+  enableShortTerm: boolean;
+  /** Exam date (ISO string). Used to cap intervals */
+  examDate?: string;
+}
+
+/**
+ * Default FSRS configuration for 7-day exam prep
+ */
+export const DEFAULT_FSRS_CONFIG: FSRSConfig = {
+  requestRetention: 0.95,
+  maximumInterval: 7,
+  enableFuzz: false,
+  enableShortTerm: true,
+};
+
+/**
+ * Preview of scheduling options for a card
+ */
+export interface SchedulingPreview {
+  [FSRSRating.Again]: { due: string; interval: number };
+  [FSRSRating.Hard]: { due: string; interval: number };
+  [FSRSRating.Good]: { due: string; interval: number };
+  [FSRSRating.Easy]: { due: string; interval: number };
+}
+
+/**
+ * Statistics about the user's FSRS cards
+ */
+export interface FSRSStats {
+  /** Total cards created */
+  totalCards: number;
+  /** New cards (never reviewed) */
+  newCards: number;
+  /** Cards in learning state */
+  learningCards: number;
+  /** Cards in review state */
+  reviewCards: number;
+  /** Cards in relearning state */
+  relearningCards: number;
+  /** Cards due now */
+  dueNow: number;
+}
