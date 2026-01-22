@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import 'fake-indexeddb/auto';
 import App from './App';
 import { deleteDatabase, resetDatabase } from '@/lib/db';
@@ -43,11 +43,13 @@ describe('App', () => {
   });
 
   afterEach(async () => {
-    // Wait for async operations to settle before cleanup
+    // Cleanup React components first to stop useLiveQuery subscriptions
+    cleanup();
+    // Wait for async operations to settle before resetting database
     await act(async () => {
       await new Promise((r) => setTimeout(r, 10));
     });
-    // Reset database instead of deleting to avoid race conditions with useLiveQuery
+    // Reset database after React cleanup to avoid DatabaseClosedError
     resetDatabase();
   });
 
