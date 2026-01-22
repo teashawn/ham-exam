@@ -24,9 +24,21 @@ export type {
   StudySession,
   UserAnswer,
   UserProfile,
+  // FSRS types
+  FSRSCard,
+  FSRSConfig,
+  FSRSReviewLog,
+  FSRSStats,
+  SchedulingPreview,
 } from './types.js';
 
-export { DEFAULT_EXAM_CONFIG } from './types.js';
+// Export enums and constants (enums are both types and values)
+export {
+  DEFAULT_EXAM_CONFIG,
+  CardState,
+  FSRSRating,
+  DEFAULT_FSRS_CONFIG,
+} from './types.js';
 
 // Engine functions
 export {
@@ -79,3 +91,18 @@ export {
   markQuestionViewed,
   switchStudySection,
 } from './study.js';
+
+// FSRS functions
+export {
+  calculateReview,
+  createExamPrepConfig,
+  createNewCard,
+  createReviewLog,
+  examResultToRating,
+  formatInterval,
+  getDaysUntilExam,
+  getDueCards,
+  getSchedulingPreview,
+  isCardDue,
+  sortCardsByUrgency,
+} from './fsrs.js';
