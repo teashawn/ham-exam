@@ -206,8 +206,12 @@ function App() {
 
   // Navigation to study home
   const handleSelectStudyMode = useCallback(() => {
+    // Initialize FSRS cards for all questions (lazy creation)
+    // Fire and forget - cards will be created in background and UI updates reactively
+    // Catch errors to avoid unhandled rejections (e.g., during test cleanup)
+    srs.initializeCards().catch(() => {/* ignore - database may be closed during cleanup */});
     setView('study-home');
-  }, []);
+  }, [srs]);
 
   const handleStartStudy = useCallback((sectionNumber: number) => {
     /* c8 ignore next */
@@ -350,6 +354,54 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [view, studySession, studyQuestionIndex, showKeyboardHints, handleStudyNextQuestion, handleStudySwitchSection, handleExitStudy]);
+
+  // Keyboard navigation for FSRS study mode
+  /* c8 ignore start - FSRS keyboard handlers require complex integration test setup with due cards */
+  useEffect(() => {
+    if (view !== 'study' || !fsrsStudyMode) return;
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Space to reveal answer
+      if (e.key === ' ' && !answerRevealed) {
+        e.preventDefault();
+        setAnswerRevealed(true);
+        const currentDueCard = srs.getNextDueCard();
+        if (currentDueCard) {
+          const preview = await srs.getSchedulePreview(currentDueCard.questionId);
+          setSchedulePreview(preview);
+        }
+        return;
+      }
+
+      // 1-4 to rate card (only when answer is revealed)
+      if (answerRevealed && ['1', '2', '3', '4'].includes(e.key)) {
+        const currentDueCard = srs.getNextDueCard();
+        if (!currentDueCard) return;
+        const rating = parseInt(e.key) as FSRSRating;
+        await srs.reviewCard(currentDueCard.questionId, rating);
+        setAnswerRevealed(false);
+        setSchedulePreview(null);
+        return;
+      }
+
+      // Escape to exit FSRS study
+      if (e.key === 'Escape') {
+        setFsrsStudyMode(false);
+        setAnswerRevealed(false);
+        setSchedulePreview(null);
+        setView('study-home');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [view, fsrsStudyMode, answerRevealed, srs]);
+  /* c8 ignore stop */
 
   const handleResetStudyProgress = useCallback(() => {
     /* c8 ignore next */

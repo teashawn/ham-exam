@@ -62,7 +62,7 @@ describe('calculateStats', () => {
       createMockCard('q2', CardState.Learning, '2024-01-15T12:00:00.000Z'),
       createMockCard('q3', CardState.Review, '2024-01-15T12:00:00.000Z'),
       createMockCard('q4', CardState.Relearning, '2024-01-15T12:00:00.000Z'),
-      createMockCard('q5', CardState.New, '2024-01-16T12:00:00.000Z'), // Not due
+      createMockCard('q5', CardState.New, '2024-01-16T12:00:00.000Z'), // New cards are always due
     ];
 
     const stats = calculateStats(cards, now);
@@ -72,7 +72,7 @@ describe('calculateStats', () => {
     expect(stats.learningCards).toBe(1);
     expect(stats.reviewCards).toBe(1);
     expect(stats.relearningCards).toBe(1);
-    expect(stats.dueNow).toBe(4); // All except q5
+    expect(stats.dueNow).toBe(5); // All cards - new cards are always available for study
   });
 
   it('should handle empty cards array', () => {
@@ -87,15 +87,17 @@ describe('calculateStats', () => {
   });
 
   it('should count due cards correctly', () => {
+    // New cards are always due regardless of due date
+    // Only non-new cards respect the due date
     const cards: FSRSCard[] = [
-      createMockCard('q1', CardState.New, '2024-01-14T12:00:00.000Z'), // Due (past)
-      createMockCard('q2', CardState.New, '2024-01-15T12:00:00.000Z'), // Due (exactly now)
-      createMockCard('q3', CardState.New, '2024-01-16T12:00:00.000Z'), // Not due (future)
+      createMockCard('q1', CardState.Learning, '2024-01-14T12:00:00.000Z'), // Due (past)
+      createMockCard('q2', CardState.Review, '2024-01-15T12:00:00.000Z'), // Due (exactly now)
+      createMockCard('q3', CardState.Learning, '2024-01-16T12:00:00.000Z'), // Not due (future)
     ];
 
     const stats = calculateStats(cards, now);
 
-    expect(stats.dueNow).toBe(2);
+    expect(stats.dueNow).toBe(2); // q1 and q2 are due, q3 is not
   });
 });
 

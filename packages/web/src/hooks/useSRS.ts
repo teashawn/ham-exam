@@ -119,7 +119,8 @@ export function calculateStats(cards: FSRSCard[], now: Date): FSRSStats {
         break;
     }
 
-    if (new Date(card.due).getTime() <= nowTime) {
+    // New cards are always available for study, plus any cards past their due date
+    if (card.state === CardState.New || new Date(card.due).getTime() <= nowTime) {
       stats.dueNow++;
     }
   }
@@ -148,8 +149,9 @@ export function useSRS({ profileId, questions }: UseSRSOptions): UseSRSReturn {
   const dueCards = useMemo(() => {
     /* c8 ignore next */
     if (!allCards) return [];
+    // New cards are always available for study, plus any cards past their due date
     const due = allCards.filter(
-      (card) => new Date(card.due).getTime() <= now.getTime()
+      (card) => card.state === CardState.New || new Date(card.due).getTime() <= now.getTime()
     );
     return sortCardsByUrgency(due, now);
   }, [allCards, now]);
