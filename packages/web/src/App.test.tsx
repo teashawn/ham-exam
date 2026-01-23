@@ -1778,5 +1778,95 @@ describe('App', () => {
 
       vi.useRealTimers();
     });
+
+    it('should navigate to next question on swipe left', async () => {
+      render(<App />);
+
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Swipe left (finger moves from right to left) on the study container
+      const container = screen.getByText('УЧЕНЕ').closest('.flex-1.flex.flex-col') as HTMLElement;
+      fireEvent.touchStart(container, { touches: [{ clientX: 200, clientY: 100 }] });
+      fireEvent.touchEnd(container, { changedTouches: [{ clientX: 100, clientY: 100 }] });
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 2')).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate to previous question on swipe right', async () => {
+      render(<App />);
+
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Go to question 2 first
+      const nextButton = screen.getByRole('button', { name: 'Напред' });
+      fireEvent.click(nextButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 2')).toBeInTheDocument();
+      });
+
+      // Swipe right (finger moves from left to right) to go back
+      const container = screen.getByText('УЧЕНЕ').closest('.flex-1.flex.flex-col') as HTMLElement;
+      fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+      fireEvent.touchEnd(container, { changedTouches: [{ clientX: 200, clientY: 100 }] });
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+    });
+
+    it('should not navigate on swipe when movement is below threshold', async () => {
+      render(<App />);
+
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Small swipe left (less than 50px threshold)
+      const container = screen.getByText('УЧЕНЕ').closest('.flex-1.flex.flex-col') as HTMLElement;
+      fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+      fireEvent.touchEnd(container, { changedTouches: [{ clientX: 70, clientY: 100 }] });
+
+      // Should still be on question 1
+      expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+    });
+
+    it('should not navigate on vertical swipe', async () => {
+      render(<App />);
+
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Vertical swipe (vertical distance > horizontal distance)
+      const container = screen.getByText('УЧЕНЕ').closest('.flex-1.flex.flex-col') as HTMLElement;
+      fireEvent.touchStart(container, { touches: [{ clientX: 100, clientY: 100 }] });
+      fireEvent.touchEnd(container, { changedTouches: [{ clientX: 40, clientY: 300 }] });
+
+      // Should still be on question 1
+      expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+    });
   });
 });

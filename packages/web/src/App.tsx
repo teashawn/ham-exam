@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSwipe } from './hooks/useSwipe';
 import type {
   ExamConfig,
   ExamData,
@@ -280,6 +281,11 @@ function App() {
     setStudyQuestionIndex(index);
     setShowQuestionGrid(false);
   }, []);
+
+  const studySwipeHandlers = useSwipe({
+    onSwipeLeft: handleStudyNextQuestion,
+    onSwipeRight: handleStudyPrevQuestion,
+  });
 
   // Check for milestone achievements
   const checkMilestone = useCallback((viewedCount: number, totalCount: number) => {
@@ -1137,7 +1143,7 @@ function App() {
     }));
 
     return (
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full" {...studySwipeHandlers}>
         <header className="p-3 bg-card border-b flex justify-between items-center shadow-soft">
           <div className="flex items-center gap-2">
             <button
