@@ -24,6 +24,8 @@ export interface ExamQuestion {
   question: string;
   options: AnswerOption[];
   correctAnswer: AnswerLetter;
+  /** Optional explanation for why the correct answer is correct (in Bulgarian) */
+  explanation?: string;
 }
 
 /**

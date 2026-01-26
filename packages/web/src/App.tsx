@@ -1091,6 +1091,23 @@ function App() {
                     );
                   })}
                 </div>
+
+                {/* Explanation section - only shown when answer is revealed */}
+                {answerRevealed && fsrsQuestion.explanation && (
+                  <div className="mt-5 pt-4 border-t border-dashed animate-fade-in">
+                    <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-[var(--radius)]">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <GraduationCap className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Обяснение</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {fsrsQuestion.explanation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1260,6 +1277,23 @@ function App() {
                     );
                   })}
                 </div>
+
+                {/* Explanation section */}
+                {question.explanation && (
+                  <div className="mt-5 pt-4 border-t border-dashed">
+                    <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-[var(--radius)]">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                        <GraduationCap className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-1">Обяснение</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {question.explanation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
