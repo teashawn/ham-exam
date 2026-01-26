@@ -27,6 +27,48 @@ Object.defineProperty(globalThis, 'localStorage', {
 // Mock window.confirm
 vi.stubGlobal('confirm', vi.fn(() => true));
 
+// Mock window.location and history for URL navigation
+const mockLocation = {
+  pathname: '/',
+  search: '',
+  hash: '',
+  href: 'http://localhost/',
+};
+
+Object.defineProperty(window, 'location', {
+  value: mockLocation,
+  writable: true,
+});
+
+const mockHistoryState: unknown[] = [];
+Object.defineProperty(window, 'history', {
+  value: {
+    pushState: vi.fn((state, _title, url) => {
+      mockHistoryState.push(state);
+      if (typeof url === 'string') {
+        const [pathname, search] = url.split('?');
+        mockLocation.pathname = pathname;
+        mockLocation.search = search ? `?${search}` : '';
+      }
+    }),
+    replaceState: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    go: vi.fn(),
+    state: null,
+    length: 1,
+    scrollRestoration: 'auto' as const,
+  },
+  writable: true,
+});
+
+// Helper to reset URL state between tests
+const resetUrlState = () => {
+  mockLocation.pathname = '/';
+  mockLocation.search = '';
+  mockHistoryState.length = 0;
+};
+
 // Helper to click on a card by finding its text and getting the clickable parent
 const clickCard = (cardText: string) => {
   const card = screen.getByText(cardText).closest('[class*="cursor-pointer"]');
@@ -63,6 +105,8 @@ describe('App', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     Object.keys(mockStorage).forEach((key) => delete mockStorage[key]);
+    // Reset URL state for each test
+    resetUrlState();
     // Use async deleteDatabase to ensure clean state
     await deleteDatabase();
   });
@@ -1867,6 +1911,281 @@ describe('App', () => {
 
       // Should still be on question 1
       expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+    });
+  });
+
+  describe('URL Navigation', () => {
+    it('should restore study mode from URL when user is logged in', async () => {
+      // Setup: User is already logged in
+      const userProfile = {
+        id: 'test-user-123',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:user-profile'] = JSON.stringify(userProfile);
+
+      // Set URL to study mode with section 2 and question 5
+      mockLocation.pathname = '/study';
+      mockLocation.search = '?section=2&q=5';
+
+      render(<App />);
+
+      // Should navigate to study mode
+      await waitFor(() => {
+        expect(screen.getByText('УЧЕНЕ')).toBeInTheDocument();
+      });
+
+      // Should show question 5 (index 4) - look for "Въпрос 5"
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 5')).toBeInTheDocument();
+      });
+    });
+
+    it('should restore study-home from URL when user is logged in', async () => {
+      // Setup: User is already logged in
+      const userProfile = {
+        id: 'test-user-123',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:user-profile'] = JSON.stringify(userProfile);
+
+      // Set URL to study-home
+      mockLocation.pathname = '/study-home';
+      mockLocation.search = '';
+
+      render(<App />);
+
+      // Should show study home
+      await waitFor(() => {
+        expect(screen.getByText('Избери начин на учене')).toBeInTheDocument();
+      });
+    });
+
+    it('should fall back to mode-select when exam URL has no session', async () => {
+      // Setup: User is already logged in
+      const userProfile = {
+        id: 'test-user-123',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:user-profile'] = JSON.stringify(userProfile);
+
+      // Set URL to exam mode - but we can't restore exam without session
+      mockLocation.pathname = '/exam';
+      mockLocation.search = '?q=5';
+
+      render(<App />);
+
+      // Should fall back to mode-select
+      await waitFor(() => {
+        expect(screen.getByText('Учене')).toBeInTheDocument();
+        expect(screen.getByText('Изпит')).toBeInTheDocument();
+      });
+    });
+
+    it('should restore exam-home from URL when user is logged in', async () => {
+      // Setup: User is already logged in
+      const userProfile = {
+        id: 'test-user-123',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:user-profile'] = JSON.stringify(userProfile);
+
+      // Set URL to exam-home
+      mockLocation.pathname = '/exam-home';
+      mockLocation.search = '';
+
+      render(<App />);
+
+      // Should show exam home
+      await waitFor(() => {
+        expect(screen.getByText('Започни изпит')).toBeInTheDocument();
+      });
+    });
+
+    it('should update URL when navigating to study mode', async () => {
+      render(<App />);
+
+      // Login
+      const input = screen.getByPlaceholderText('Въведете името си');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Започни' }));
+
+      // Go to study mode
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // URL should be updated
+      expect(mockLocation.pathname).toBe('/study');
+    });
+
+    it('should update question index in URL when navigating', async () => {
+      render(<App />);
+
+      // Login
+      const input = screen.getByPlaceholderText('Въведете името си');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Започни' }));
+
+      // Go to study mode
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Navigate to next question
+      fireEvent.click(screen.getByText('Напред'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 2')).toBeInTheDocument();
+      });
+
+      // URL should be updated with new question index
+      expect(mockLocation.search).toContain('q=2');
+    });
+
+    it('should handle browser back button navigation', async () => {
+      render(<App />);
+
+      // Login
+      const input = screen.getByPlaceholderText('Въведете името си');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Започни' }));
+
+      // Navigate to exam-home
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByText('Започни изпит')).toBeInTheDocument();
+      });
+
+      // Simulate browser back button by updating URL and dispatching popstate
+      mockLocation.pathname = '/mode-select';
+      mockLocation.search = '';
+
+      await act(async () => {
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+
+      // Should be back at mode-select
+      await waitFor(() => {
+        expect(screen.getByText('Учене')).toBeInTheDocument();
+        expect(screen.getByText('Изпит')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle popstate for exam view with question index', async () => {
+      render(<App />);
+
+      // Login
+      const input = screen.getByPlaceholderText('Въведете името си');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Започни' }));
+
+      // Start exam
+      clickCard('Изпит');
+
+      await waitFor(() => {
+        expect(screen.getByText('Започни изпит')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Започни изпит'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Navigate to question 3
+      fireEvent.click(screen.getByText('Напред'));
+      fireEvent.click(screen.getByText('Напред'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 3')).toBeInTheDocument();
+      });
+
+      // Simulate browser back to question 2
+      mockLocation.pathname = '/exam';
+      mockLocation.search = '?q=2';
+
+      await act(async () => {
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+
+      // Should be at question 2
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 2')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle popstate for study view with section and question', async () => {
+      render(<App />);
+
+      // Login
+      const input = screen.getByPlaceholderText('Въведете името си');
+      fireEvent.change(input, { target: { value: 'Test User' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Започни' }));
+
+      // Go to study mode
+      await goToSectionsMode();
+
+      clickCard('Раздел 1');
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
+      });
+
+      // Navigate forward a few questions
+      fireEvent.click(screen.getByText('Напред'));
+      fireEvent.click(screen.getByText('Напред'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 3')).toBeInTheDocument();
+      });
+
+      // Simulate browser back to section 2, question 5
+      mockLocation.pathname = '/study';
+      mockLocation.search = '?section=2&q=5';
+
+      await act(async () => {
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+
+      // Should show question 5
+      await waitFor(() => {
+        expect(screen.getByText('Въпрос 5')).toBeInTheDocument();
+      });
+    });
+
+    it('should restore FSRS study mode from URL and show completion when no cards due', async () => {
+      // Setup: User is already logged in
+      const userProfile = {
+        id: 'test-user-123',
+        name: 'Test User',
+        createdAt: new Date().toISOString(),
+      };
+      mockStorage['ham-exam:user-profile'] = JSON.stringify(userProfile);
+
+      // Set URL to study mode with FSRS flag
+      // Since there are no due cards, it shows the completion screen
+      mockLocation.pathname = '/study';
+      mockLocation.search = '?fsrs=1';
+
+      render(<App />);
+
+      // Should show FSRS completion screen (no due cards)
+      await waitFor(() => {
+        expect(screen.getByText('Назад към учене')).toBeInTheDocument();
+      });
     });
   });
 });

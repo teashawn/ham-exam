@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSwipe } from './hooks/useSwipe';
+import { useUrlNavigation, parseUrl, type UrlState } from './hooks/useUrlNavigation';
 import type {
   ExamConfig,
   ExamData,
@@ -84,6 +85,10 @@ function App() {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [schedulePreview, setSchedulePreview] = useState<SchedulingPreview | null>(null);
 
+  // URL navigation state
+  const urlInitialized = useRef(false);
+  const pendingUrlState = useRef<UrlState | null>(null);
+
   // Get all questions for useSRS hook
   const allQuestions = examData.sections.flatMap(s => s.questions);
 
@@ -93,33 +98,109 @@ function App() {
     questions: allQuestions,
   });
 
-  useEffect(() => {
-    // Initialize theme on mount
-    initTheme();
-
-    const savedUser = loadUserProfile();
-    if (savedUser) {
-      setUser(savedUser);
-      initializeStudySession(savedUser);
-      setView('mode-select');
+  // Handle URL changes (browser back/forward)
+  const handleUrlChange = useCallback((urlState: UrlState) => {
+    // Store pending state to be applied after data is loaded
+    /* c8 ignore next 4 - defensive check for race condition */
+    if (!urlInitialized.current) {
+      pendingUrlState.current = urlState;
+      return;
     }
 
-    const savedConfig = loadExamConfig();
-    if (savedConfig) {
-      setConfig(savedConfig);
+    setView(urlState.view);
+
+    if (urlState.view === 'exam' && urlState.questionIndex !== undefined) {
+      setCurrentQuestionIndex(urlState.questionIndex);
+    }
+
+    if (urlState.view === 'study') {
+      if (urlState.sectionNumber !== undefined) {
+        setStudySession(prev => {
+          /* c8 ignore next - defensive null check */
+          if (!prev) return prev;
+          return { ...prev, currentSectionNumber: urlState.sectionNumber! };
+        });
+      }
+      if (urlState.questionIndex !== undefined) {
+        setStudyQuestionIndex(urlState.questionIndex);
+      }
+      setFsrsStudyMode(urlState.fsrsMode ?? false);
     }
   }, []);
 
-  // Initialize study session for a user (used on login and mode-select)
-  const initializeStudySession = useCallback((userProfile: UserProfile) => {
-    const newSession = createStudySession(examData, { sectionNumber: 0 }, userProfile.id);
+  // URL navigation hook
+  useUrlNavigation({
+    view,
+    questionIndex: view === 'exam' ? currentQuestionIndex : studyQuestionIndex,
+    sectionNumber: studySession?.currentSectionNumber,
+    fsrsMode: fsrsStudyMode,
+    onUrlChange: handleUrlChange,
+  });
+
+  // Initialize study session helper
+  const initializeStudySessionHelper = useCallback((userProfile: UserProfile, sectionNumber?: number) => {
+    const newSession = createStudySession(examData, { sectionNumber: sectionNumber ?? 0 }, userProfile.id);
     const savedProgress = loadStudyProgress(userProfile.id);
     if (savedProgress) {
       loadViewedQuestions(newSession, savedProgress.viewedQuestionIds);
     }
     setStudySession(newSession);
     setStudyProgress(getStudyProgress(newSession, examData));
+    return newSession;
   }, []);
+
+  // Main initialization effect
+  useEffect(() => {
+    // Initialize theme on mount
+    initTheme();
+
+    const savedConfig = loadExamConfig();
+    if (savedConfig) {
+      setConfig(savedConfig);
+    }
+
+    // Parse initial URL state
+    const urlState = parseUrl();
+    const savedUser = loadUserProfile();
+
+    if (savedUser) {
+      setUser(savedUser);
+
+      // Apply URL state if user is logged in and URL has a valid view
+      if (urlState.view !== 'login') {
+        // Initialize study session with section from URL if applicable
+        const sectionNum = urlState.view === 'study' ? urlState.sectionNumber : undefined;
+        initializeStudySessionHelper(savedUser, sectionNum);
+
+        setView(urlState.view);
+
+        // Handle study view state
+        if (urlState.view === 'study') {
+          if (urlState.questionIndex !== undefined) {
+            setStudyQuestionIndex(urlState.questionIndex);
+          }
+          setFsrsStudyMode(urlState.fsrsMode ?? false);
+        }
+
+        // Store pending state for exam (needs session to be created first via user action)
+        if (urlState.view === 'exam') {
+          pendingUrlState.current = urlState;
+          // Fall back to mode-select since we can't restore exam without session
+          setView('mode-select');
+        }
+      } else {
+        initializeStudySessionHelper(savedUser);
+        setView('mode-select');
+      }
+    }
+
+    urlInitialized.current = true;
+  }, [initializeStudySessionHelper]);
+
+  // Initialize study session for a user (used on login and mode-select)
+  const initializeStudySession = useCallback((userProfile: UserProfile) => {
+    initializeStudySessionHelper(userProfile);
+  }, [initializeStudySessionHelper]);
 
   const handleLogin = useCallback((e: React.FormEvent) => {
     e.preventDefault();
