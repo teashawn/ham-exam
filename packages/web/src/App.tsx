@@ -613,7 +613,7 @@ function App() {
 
     return (
       <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
-        <header className="p-4 bg-card border-b flex items-center gap-3 shadow-soft">
+        <header className="py-4 safe-area-x bg-card border-b flex items-center gap-3 shadow-soft">
           <button
             onClick={() => setView('exam-home')}
             className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
@@ -623,7 +623,7 @@ function App() {
           </button>
           <h1 className="text-xl font-semibold">Настройки</h1>
         </header>
-        <main className="flex-1 p-4 space-y-4 overflow-y-auto">
+        <main className="flex-1 py-4 safe-area-x space-y-4 overflow-y-auto">
           <Card className="animate-fade-in">
             <CardContent className="pt-5 space-y-6">
               {examData.sections.map((section, index) => (

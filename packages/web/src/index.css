@@ -320,3 +320,9 @@ html, body, #root {
   background-color: var(--color-primary);
   transform: scale(1.5);
 }
+
+/* Safe area padding utilities for iOS notch/home indicator */
+.safe-area-x {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
