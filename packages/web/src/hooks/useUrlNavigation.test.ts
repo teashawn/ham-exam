@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { parseUrl, buildUrl, useUrlNavigation, type UrlState } from './useUrlNavigation';
 import type { AppView } from '../types';
+import { parseUrl, buildUrl, useUrlNavigation, type UrlState } from './useUrlNavigation';
 
 // Mock window.location
 const mockLocation = {
-  pathname: '/',
+  pathname: '/ham-exam/',
   search: '',
   hash: '',
-  href: 'http://localhost/',
+  href: 'http://localhost/ham-exam/',
 };
 
 Object.defineProperty(window, 'location', {
@@ -34,7 +34,7 @@ Object.defineProperty(window, 'history', {
 
 // Helper to reset mocks
 const resetMocks = () => {
-  mockLocation.pathname = '/';
+  mockLocation.pathname = '/ham-exam/';
   mockLocation.search = '';
   mockPushState.mockClear();
 };
@@ -51,7 +51,15 @@ describe('useUrlNavigation', () => {
 
   describe('parseUrl', () => {
     it('should parse root path as login', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
+      mockLocation.search = '';
+
+      const result = parseUrl();
+      expect(result.view).toBe('login');
+    });
+
+    it('should parse base path without trailing slash as login', () => {
+      mockLocation.pathname = '/ham-exam';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -59,7 +67,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /login as login', () => {
-      mockLocation.pathname = '/login';
+      mockLocation.pathname = '/ham-exam/login';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -67,7 +75,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /mode-select', () => {
-      mockLocation.pathname = '/mode-select';
+      mockLocation.pathname = '/ham-exam/mode-select';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -75,7 +83,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /exam-home', () => {
-      mockLocation.pathname = '/exam-home';
+      mockLocation.pathname = '/ham-exam/exam-home';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -83,7 +91,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /study-home', () => {
-      mockLocation.pathname = '/study-home';
+      mockLocation.pathname = '/ham-exam/study-home';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -91,7 +99,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /config', () => {
-      mockLocation.pathname = '/config';
+      mockLocation.pathname = '/ham-exam/config';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -99,7 +107,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /exam with question index', () => {
-      mockLocation.pathname = '/exam';
+      mockLocation.pathname = '/ham-exam/exam';
       mockLocation.search = '?q=5';
 
       const result = parseUrl();
@@ -108,7 +116,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /study with section and question', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?section=2&q=10';
 
       const result = parseUrl();
@@ -118,7 +126,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /study with fsrs mode', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?fsrs=1';
 
       const result = parseUrl();
@@ -127,7 +135,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /study with fsrs=true', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?fsrs=true';
 
       const result = parseUrl();
@@ -136,7 +144,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /results', () => {
-      mockLocation.pathname = '/results';
+      mockLocation.pathname = '/ham-exam/results';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -144,7 +152,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should parse /history', () => {
-      mockLocation.pathname = '/history';
+      mockLocation.pathname = '/ham-exam/history';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -152,7 +160,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should default to login for unknown paths', () => {
-      mockLocation.pathname = '/unknown';
+      mockLocation.pathname = '/ham-exam/unknown';
       mockLocation.search = '';
 
       const result = parseUrl();
@@ -160,7 +168,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should ignore invalid question index', () => {
-      mockLocation.pathname = '/exam';
+      mockLocation.pathname = '/ham-exam/exam';
       mockLocation.search = '?q=abc';
 
       const result = parseUrl();
@@ -169,7 +177,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should ignore question index less than 1', () => {
-      mockLocation.pathname = '/exam';
+      mockLocation.pathname = '/ham-exam/exam';
       mockLocation.search = '?q=0';
 
       const result = parseUrl();
@@ -178,7 +186,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should ignore invalid section number', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?section=abc';
 
       const result = parseUrl();
@@ -187,7 +195,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should ignore section number out of range (0)', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?section=0';
 
       const result = parseUrl();
@@ -196,7 +204,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should ignore section number out of range (4)', () => {
-      mockLocation.pathname = '/study';
+      mockLocation.pathname = '/ham-exam/study';
       mockLocation.search = '?section=4';
 
       const result = parseUrl();
@@ -208,32 +216,32 @@ describe('useUrlNavigation', () => {
   describe('buildUrl', () => {
     it('should build URL for login', () => {
       const state: UrlState = { view: 'login' };
-      expect(buildUrl(state)).toBe('/');
+      expect(buildUrl(state)).toBe('/ham-exam/');
     });
 
     it('should build URL for mode-select', () => {
       const state: UrlState = { view: 'mode-select' };
-      expect(buildUrl(state)).toBe('/mode-select');
+      expect(buildUrl(state)).toBe('/ham-exam/mode-select');
     });
 
     it('should build URL for exam-home', () => {
       const state: UrlState = { view: 'exam-home' };
-      expect(buildUrl(state)).toBe('/exam-home');
+      expect(buildUrl(state)).toBe('/ham-exam/exam-home');
     });
 
     it('should build URL for study-home', () => {
       const state: UrlState = { view: 'study-home' };
-      expect(buildUrl(state)).toBe('/study-home');
+      expect(buildUrl(state)).toBe('/ham-exam/study-home');
     });
 
     it('should build URL for config', () => {
       const state: UrlState = { view: 'config' };
-      expect(buildUrl(state)).toBe('/config');
+      expect(buildUrl(state)).toBe('/ham-exam/config');
     });
 
     it('should build URL for exam with question index', () => {
       const state: UrlState = { view: 'exam', questionIndex: 4 };
-      expect(buildUrl(state)).toBe('/exam?q=5'); // 0-based to 1-based
+      expect(buildUrl(state)).toBe('/ham-exam/exam?q=5'); // 0-based to 1-based
     });
 
     it('should build URL for study with all params', () => {
@@ -243,38 +251,38 @@ describe('useUrlNavigation', () => {
         questionIndex: 9,
         fsrsMode: true,
       };
-      expect(buildUrl(state)).toBe('/study?q=10&section=2&fsrs=1');
+      expect(buildUrl(state)).toBe('/ham-exam/study?q=10&section=2&fsrs=1');
     });
 
     it('should build URL for study with only section', () => {
       const state: UrlState = { view: 'study', sectionNumber: 1 };
-      expect(buildUrl(state)).toBe('/study?section=1');
+      expect(buildUrl(state)).toBe('/ham-exam/study?section=1');
     });
 
     it('should build URL for results', () => {
       const state: UrlState = { view: 'results' };
-      expect(buildUrl(state)).toBe('/results');
+      expect(buildUrl(state)).toBe('/ham-exam/results');
     });
 
     it('should build URL for history', () => {
       const state: UrlState = { view: 'history' };
-      expect(buildUrl(state)).toBe('/history');
+      expect(buildUrl(state)).toBe('/ham-exam/history');
     });
 
     it('should handle questionIndex of 0', () => {
       const state: UrlState = { view: 'exam', questionIndex: 0 };
-      expect(buildUrl(state)).toBe('/exam?q=1');
+      expect(buildUrl(state)).toBe('/ham-exam/exam?q=1');
     });
 
     it('should not include fsrsMode when false', () => {
       const state: UrlState = { view: 'study', fsrsMode: false };
-      expect(buildUrl(state)).toBe('/study');
+      expect(buildUrl(state)).toBe('/ham-exam/study');
     });
   });
 
   describe('useUrlNavigation hook', () => {
     it('should provide getInitialState function', () => {
-      mockLocation.pathname = '/mode-select';
+      mockLocation.pathname = '/ham-exam/mode-select';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();
@@ -293,7 +301,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should update URL when view changes', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();
@@ -316,12 +324,12 @@ describe('useUrlNavigation', () => {
       expect(mockPushState).toHaveBeenCalledWith(
         { view: 'mode-select' },
         '',
-        '/mode-select'
+        '/ham-exam/mode-select'
       );
     });
 
     it('should update URL with question index for exam view', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();
@@ -342,12 +350,12 @@ describe('useUrlNavigation', () => {
       expect(mockPushState).toHaveBeenCalledWith(
         { view: 'exam', questionIndex: 5 },
         '',
-        '/exam?q=6'
+        '/ham-exam/exam?q=6'
       );
     });
 
     it('should update URL with section and question for study view', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();
@@ -374,12 +382,12 @@ describe('useUrlNavigation', () => {
       expect(mockPushState).toHaveBeenCalledWith(
         { view: 'study', questionIndex: 10, sectionNumber: 2 },
         '',
-        '/study?q=11&section=2'
+        '/ham-exam/study?q=11&section=2'
       );
     });
 
     it('should include fsrsMode in URL for study view', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();
@@ -400,12 +408,12 @@ describe('useUrlNavigation', () => {
       expect(mockPushState).toHaveBeenCalledWith(
         { view: 'study', questionIndex: 0, fsrsMode: true },
         '',
-        '/study?q=1&fsrs=1'
+        '/ham-exam/study?q=1&fsrs=1'
       );
     });
 
     it('should call onUrlChange when popstate event fires', async () => {
-      mockLocation.pathname = '/exam';
+      mockLocation.pathname = '/ham-exam/exam';
       mockLocation.search = '?q=5';
 
       const onUrlChange = vi.fn();
@@ -420,7 +428,7 @@ describe('useUrlNavigation', () => {
       );
 
       // Simulate browser back button
-      mockLocation.pathname = '/mode-select';
+      mockLocation.pathname = '/ham-exam/mode-select';
       mockLocation.search = '';
 
       await act(async () => {
@@ -433,7 +441,7 @@ describe('useUrlNavigation', () => {
     });
 
     it('should not push same URL twice', () => {
-      mockLocation.pathname = '/';
+      mockLocation.pathname = '/ham-exam/';
       mockLocation.search = '';
 
       const onUrlChange = vi.fn();

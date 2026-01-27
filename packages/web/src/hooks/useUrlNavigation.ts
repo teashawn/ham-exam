@@ -1,6 +1,10 @@
 import { useEffect, useCallback, useRef } from 'react';
 import type { AppView } from '../types';
 
+// Get the base path from Vite config (e.g., '/ham-exam/' in production, '/' in dev)
+/* c8 ignore next - defensive fallback, BASE_URL always provided by Vite */
+const BASE_PATH = import.meta.env.BASE_URL || '/';
+
 export interface UrlState {
   view: AppView;
   questionIndex?: number;
@@ -43,8 +47,14 @@ const viewToPath: Record<AppView, string> = {
  * Parse the current URL into app state
  */
 export function parseUrl(): UrlState {
-  const path = window.location.pathname;
+  let path = window.location.pathname;
   const params = new URLSearchParams(window.location.search);
+
+  // Strip base path prefix (e.g., '/ham-exam' from '/ham-exam/study')
+  const baseWithoutTrailing = BASE_PATH.replace(/\/$/, '');
+  if (baseWithoutTrailing && path.startsWith(baseWithoutTrailing)) {
+    path = path.slice(baseWithoutTrailing.length) || '/';
+  }
 
   const view = pathToView[path] ?? 'login';
 
@@ -82,7 +92,7 @@ export function parseUrl(): UrlState {
  */
 export function buildUrl(state: UrlState): string {
   /* c8 ignore next - fallback for unknown view types */
-  const path = viewToPath[state.view] ?? '/';
+  const viewPath = viewToPath[state.view] ?? '/';
   const params = new URLSearchParams();
 
   // Add question index (convert to 1-based for URL)
@@ -99,6 +109,10 @@ export function buildUrl(state: UrlState): string {
   if (state.fsrsMode) {
     params.set('fsrs', '1');
   }
+
+  // Combine base path with view path (avoiding double slashes)
+  const baseWithoutTrailing = BASE_PATH.replace(/\/$/, '');
+  const path = viewPath === '/' ? BASE_PATH : `${baseWithoutTrailing}${viewPath}`;
 
   const search = params.toString();
   return search ? `${path}?${search}` : path;

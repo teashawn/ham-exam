@@ -2022,8 +2022,8 @@ describe('App', () => {
         expect(screen.getByText('Въпрос 1')).toBeInTheDocument();
       });
 
-      // URL should be updated
-      expect(mockLocation.pathname).toBe('/study');
+      // URL should be updated (includes base path /ham-exam/)
+      expect(mockLocation.pathname).toBe('/ham-exam/study');
     });
 
     it('should update question index in URL when navigating', async () => {
